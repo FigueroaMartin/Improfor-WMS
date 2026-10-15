@@ -1,0 +1,367 @@
+// Fase 2 — persistencia real. SQLite ahora (cero configuración en esta
+// máquina); el día del despliegue se cambia el datasource a Postgres sin
+// tocar el resto del código (Prisma abstrae el motor).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Pedido {
+  id               String   @id
+  oc               String?
+  columnaDespacho  String
+  cliente          String
+  contacto         String
+  vendedor         String
+  documento        String
+  modoDespacho     String
+  situacionCobro   String?
+  // Independiente de situacionCobro — un pedido puede ser factura
+  // anticipada y a la vez estar "Pendiente de pago", o ninguna de las dos.
+  facturaAnticipada Boolean @default(false)
+  nuevo            Boolean  @default(false)
+  motivoNC         String?
+  guiaRecepcionada Boolean?
+
+  facturaNumero String?
+  facturaTotal  Int?
+  facturaPagado Int?
+
+  // Abono en 2 pasos (§5f.5) — pedido "Pendiente de pago" con productos
+  // sin stock que necesita abono para poder pedir a Compras. Paso 1
+  // (Luisana): ingresa el monto, sin documento tributario todavía. Paso 2
+  // (María José): revisa la cartola y da el visto bueno — recién ahí se
+  // libera el pedido a "Por pedir".
+  abonoMonto    Int?
+  abonoFecha    DateTime?
+  abonoNota     String?
+  abonoRevisado Boolean   @default(false)
+
+  // Factura anticipada — 3 filas (§5f.7/5f.8): Solicitud (sin facturaNumero)
+  // → Emitidas·enlazando (facturaNumero emitido, "no mueve stock" ON,
+  // esperando enlazar la guía) → Totalmente entregadas (guía enlazada,
+  // "no mueve stock" desmarcado). El N° de folio vive en facturaNumero.
+  facturaAnticipadaNoMueveStock Boolean @default(false)
+  facturaAnticipadaEnlazada     Boolean @default(false)
+
+  // Cierre de despacho en Bodega (frente de Salida) — se llena al cerrar,
+  // no al crear el pedido.
+  caratula        String?
+  bultos          Int?
+  fotoCapturada   Boolean?
+  fotoDataUrl     String? // la foto real del bulto, tomada con la cámara al cerrar
+  medidas         String?
+  peso            Float?
+  otNumero        String?
+  firmaCapturada  Boolean?
+
+  // Datos para generar la etiqueta de despacho (Starken por ahora) — hoy
+  // se piden a mano porque no hay API real; el día que la haya, estos
+  // mismos campos son los que se le mandan.
+  direccionEntrega  String?
+  comuna            String?
+  telefonoContacto  String?
+  numeroGuiaStarken String? // lo que hoy devuelve el mock de "Generar etiqueta"
+
+  // Adjuntos de Despacho (instrucciones de embalaje, etc.) — "se imprimen
+  // en bodega". JSON: [{ nombre, dataUrl, subidoEn }]
+  adjuntos String?
+
+  // Foto de la guía/manifiesto del retiro por transportista (§5g.2) — se
+  // adjunta una vez por retiro y queda en todos los pedidos que se
+  // llevaron juntos en ese viaje.
+  fotoGuiaRetiro String?
+
+  // Cierre de entrega de Robinson (transportista interno, app propia en
+  // /repartos) — al entregar, sube la foto de la guía firmada por el
+  // cliente + comentarios y cierra él mismo su reparto.
+  fotoEntregaRobinson        String?
+  comentarioEntregaRobinson String?
+
+  productos Producto[]
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+}
+
+model Producto {
+  id        Int    @id @default(autoincrement())
+  pedidoId  String
+  pedido    Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  sku       String
+  nombre    String
+  cantidad  Int
+  stock     Int
+  estado    String
+  preparado Int    @default(0)
+
+  // Fecha del último cambio en la línea (estado, preparado, etc.) — para
+  // mostrar "estado + fecha del proceso" en la tarjeta de Luisana.
+  actualizadoEn DateTime @default(now()) @updatedAt
+
+  // Transformación de productos (§5b.1) — receta del maestro de productos
+  // del software: JSON [{ sku, nombre, cantidadPorUnidad, stockDisponible }].
+  // Si viene con receta, hay que confirmar la transformación (con stock
+  // suficiente de cada componente) antes de pasar a Despacho.
+  receta      String?
+  transformado Boolean @default(false)
+
+  // Motivo cuando Bodega despacha menos de lo pedido habiendo stock para
+  // completarlo (§5g.1) — cliente pidió parcial / dañado-no apto / se
+  // completa después / otro.
+  motivoIncompleto String?
+
+  // Proveedor del SKU — simplificación del maestro de productos (que en
+  // Laudus tendría proveedor 1:1). Sirve para conectar un producto sin
+  // stock con la línea de "Por pedir" correcta en Compras.
+  proveedor String?
+}
+
+model OrdenCompra {
+  id               String   @id
+  columna          String
+  proveedor        String
+  producto         String
+  cantidad         Int
+  monto            Int
+  condicionPago    String?
+  modalidadPago    String?
+  filaPago         String?
+  tracking         String?
+  warehouseReceipt String?
+  awb              String?
+  origenPedido     String?
+  tramosPago       PagoTramo[]
+  creadoEn         DateTime @default(now())
+
+  // OC en construcción (§3 Compras) — costo unitario (de Laudus, editable
+  // acá) y nota de la OC.
+  costoUnitario Int?
+  nota          String?
+  transportistaNombre String?
+
+  cargaId String?
+  carga   Carga?  @relation(fields: [cargaId], references: [id])
+
+  // Posponer OC (§5c pendiente — descuadres/posponer OC) — el proveedor
+  // avisa un atraso; se anota hasta cuándo y por qué, sin mover la OC de
+  // columna.
+  pospuestaHasta DateTime?
+  pospuestaMotivo String?
+}
+
+// Descuadres de recepción (`Pablo_Descuadres_Recepcion`) — al recepcionar
+// una OC, lo recibido puede no calzar con lo esperado. Sobró (＋, azul) va
+// a stock; faltó/no llegó (−, rojo) vuelve a «OC Pendientes».
+model Descuadre {
+  id               Int      @id @default(autoincrement())
+  ordenCompraId    String
+  proveedor        String
+  producto         String
+  tipo             String // sobro | falto | no_llego
+  cantidadEsperada Int
+  cantidadRecibida Int
+  diferencia       Int
+  origenPedido     String?
+  cerrado          Boolean  @default(false)
+  creadoEn         DateTime @default(now())
+}
+
+// Consolidado de Miami (§5 pendiente #7, "por diseñar" en el documento
+// fuente) — "Carga (embarque) = unidad de seguimiento, agrupa varias OC".
+// Se arma con las OC de proveedores ruta "Consolidado Miami" que ya están
+// en «Pendiente de despacho»; desde ahí avanza como un solo bloque por
+// Miami → Chile, y todas sus OC se mueven juntas.
+model Carga {
+  id               String        @id
+  columna          String        @default("transito_miami")
+  warehouseReceipt String?
+  awb              String?
+  ordenes          OrdenCompra[]
+  creadoEn         DateTime      @default(now())
+}
+
+// Maestro de proveedores (§5 pendiente #10 — "Reglas de ruta por
+// proveedor", por diseñar en el documento fuente). Define la ruta física
+// que siguen las OC de ese proveedor, usada para bloquear columnas de
+// Compras que no le corresponden (ej. un proveedor nacional no pasa por
+// "En tránsito a Miami"). condicionPago es la fuente de verdad propia del
+// software (§Pendientes_Desarrollador #8).
+model Proveedor {
+  nombre        String @id
+  condicionPago String?
+  ruta          String @default("Consolidado Miami")
+}
+
+// Posponer compra (§7 "NUEVO — Compras_Posponer_OC") — Pablo, desde el
+// grupo del proveedor en «Por pedir», deja registrado que todavía NO emite
+// la OC (motivo tipificado + fecha opcional para reevaluar + nota libre).
+// No bloquea nada — las líneas siguen acumulándose; el grupo solo queda
+// marcado "⏸ En espera · motivo". Se limpia sola al emitir la OC del grupo.
+model PosponerCompra {
+  proveedor      String   @id
+  motivo         String
+  fechaReevaluar DateTime?
+  nota           String?
+  autor          String?
+  creadoEn       DateTime @default(now())
+}
+
+// Gerencia Finanzas (§7 "EN CURSO — Perfil «Gerencia Finanzas»") — cuenta
+// por pagar a un proveedor, generada al registrar la factura del
+// proveedor en Compras (N° + fecha de emisión + monto; el monto puede
+// diferir del de la OC por flete/descuento). Crédito: el vencimiento nace
+// al cargar la factura (emisión + condición de pago del maestro de
+// proveedores). Anticipo/Contra entrega: sin vencimiento calculado — se
+// pagan por su propio disparador (antes de despachar / al despachar), y
+// quedan igual visibles y pagables acá.
+model CuentaPorPagar {
+  id                 Int       @id @default(autoincrement())
+  ordenCompraId      String    @unique
+  proveedor          String
+  modalidad          String // Crédito | Anticipo | Contra entrega
+  facturaNumero      String
+  facturaFechaEmision DateTime
+  monto              Int
+  montoPagado        Int       @default(0)
+  fechaVencimiento   DateTime?
+  estado             String    @default("pendiente") // pendiente | parcial | pagada
+  medioPago          String?
+  numeroOperacion    String?
+  comprobante        String?
+  fechaPago          DateTime?
+  creadoEn           DateTime  @default(now())
+}
+
+// Maestro de productos de stock (§5 pendiente #9 — "Política de stock",
+// por diseñar con Pablo; §6 "Leer mín/máx de Laudus: con mín/máx = «de
+// stock»; sin = «a pedido»"). stockActual simula el disponible que en
+// producción vendría de Laudus (físico − reservado); minimo/maximo definen
+// la política de reposición.
+model ProductoMaestro {
+  sku         String  @id
+  nombre      String
+  proveedor   String?
+  stockActual Int     @default(0)
+  minimo      Int?
+  maximo      Int?
+}
+
+// Maestro de vendedores (Admin_Maestros) — equipo comercial propio del
+// software; alimenta el selector "filtrar por vendedor" de Administrador
+// y, a futuro, el desplegable de vendedor al crear un pedido.
+model Vendedor {
+  nombre String  @id
+  activo Boolean @default(true)
+}
+
+// Maestro de transportistas (§3 Compras — Compras_Transportistas). Se
+// guarda una vez acá (no en Laudus) y alimenta el desplegable de
+// "Registrar envío". urlRastreo trae el patrón con "{tracking}", que se
+// reemplaza por el N° real al abrir "Rastrear en el sitio de...".
+model Transportista {
+  nombre     String  @id
+  tipo       String
+  urlRastreo String?
+  activo     Boolean @default(true)
+}
+
+// Plan de pago por tramos (§3 Compras — Compras_OC_Gestionar_Pago) —
+// ej. 50% al enviar la OC / 50% contra entrega, o 100% anticipado.
+model PagoTramo {
+  id            Int          @id @default(autoincrement())
+  ordenCompraId String
+  ordenCompra   OrdenCompra  @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  etiqueta      String // "50% al enviar la OC", "Saldo contra entrega", etc.
+  monto         Int
+  pagado        Boolean      @default(false)
+  fecha         DateTime?
+  medio         String?
+  comprobante   String?
+  creadoEn      DateTime     @default(now())
+}
+
+// Ficha de cliente v2 (§5f.6) — la identidad (razón social, dirección de
+// facturación) se lee de Laudus 🔒; acá solo se administra lo propio del
+// software: días de facturación, modalidad, y contactos de cobranza.
+// Se referencia por nombre (Pedido.cliente es un string, sin FK todavía).
+model Cliente {
+  nombre               String  @id
+  diasFacturacion      Int?
+  modalidadFacturacion String? // "Parcializada" | "Total"
+  contactoComprador    String?
+  contactoPagos        String?
+
+  // Preferencias de despacho/facturación (Maestro de Clientes) — en blanco
+  // por defecto; si tienen valor, se usan como pre-selección automática al
+  // clasificar un ingreso nuevo de este cliente (documento y modo de
+  // despacho), en vez de dejar los campos vacíos.
+  documentoPreferido    String? // "Guía de despacho" | "Factura" | "Boleta"
+  modoDespachoPreferido String? // "Cliente retira" | "Starken" | "Starken(Sendu)" | "Chilexpress" | "Robinson" | "Otro"
+}
+
+model Usuario {
+  id     Int    @id @default(autoincrement())
+  nombre String
+  rol    String // luisana | mariajose | fernando | marcela | vendedor | admin
+}
+
+// Bandeja de avisos transversal — Fase 2 checklist del roadmap.
+model Aviso {
+  id       Int      @id @default(autoincrement())
+  area     String // despacho | bodega | cobranzas | compras | admin
+  mensaje  String
+  pedidoId String?
+  leido    Boolean  @default(false)
+  creadoEn DateTime @default(now())
+}
+
+// Historial de acciones para poder "deshacer" — cada acción de Bodega
+// guarda una foto de cómo estaba el pedido justo antes de aplicarse.
+model HistorialAccion {
+  id       Int      @id @default(autoincrement())
+  area     String // bodega | despacho | cobranzas | compras
+  pedidoId String
+  accion   String // texto legible: "Movido a Por preparar", "Cierre registrado", etc.
+  snapshot String // JSON con los campos que la acción pudo haber cambiado
+  creadoEn DateTime @default(now())
+}
+
+// Notas rápidas de Bodega — para cuando se separa un producto sin que
+// quede ningún documento formal (pedido, salida, OC) que lo respalde.
+model Recordatorio {
+  id       Int      @id @default(autoincrement())
+  area     String // bodega | despacho | cobranzas | compras
+  texto    String
+  autor    String?
+  resuelto Boolean  @default(false)
+  creadoEn DateTime @default(now())
+}
+
+// "Cachos" — problemas/incidencias que se conversan con comentarios (no
+// son un recordatorio de una línea; son un hilo). Ej.: un descuadre raro,
+// un cliente difícil, algo que no calzó y hay que ir dejando registro.
+model Cacho {
+  id          Int               @id @default(autoincrement())
+  area        String // despacho | bodega | cobranzas | compras
+  texto       String
+  autor       String?
+  pedidoId    String? // pedido arrastrado a la sección (opcional — puede ser un cacho suelto)
+  resuelto    Boolean           @default(false)
+  creadoEn    DateTime          @default(now())
+  comentarios CachoComentario[]
+}
+
+model CachoComentario {
+  id       Int      @id @default(autoincrement())
+  cachoId  Int
+  cacho    Cacho    @relation(fields: [cachoId], references: [id], onDelete: Cascade)
+  autor    String?
+  texto    String
+  creadoEn DateTime @default(now())
+}

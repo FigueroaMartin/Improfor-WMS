@@ -1,0 +1,1201 @@
+/* Sistema de diseño Improfor — el mismo de la maqueta Fase 1
+   (maqueta/styles.css): paleta por estado, Cambria en títulos, Calibri
+   en cuerpo. Se mantiene un solo lenguaje visual entre ambas. */
+
+:root{
+  --amber: #C8871F;   --amber-tint: #FBEEDA;
+  --blue:  #2F6FB0;   --blue-tint:  #E9F1F8;
+  --red:   #C8102E;   --red-tint:   #FBE7EA;
+  --purple:#534AB7;   --purple-tint:#EDECFB;
+  --teal:  #1F8A7A;   --teal-tint:  #E4F3EE;
+  --black: #1C1C1E;
+  --grey-tint: #EEEEF1;
+  --ink-tint: #EEEEF1; /* avatar del perfil Admin */
+
+  --bg: #F1F1F4;
+  --card: #F6F6F8;
+  --line: #E6E6EA;
+  --ink: var(--black);
+  --ink-soft: #63636B;
+
+  --font-title: Cambria, Georgia, serif;
+  --font-body: Calibri, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+*{ box-sizing: border-box; margin: 0; padding: 0; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+a{ color: inherit; }
+
+/* Reset base de botones — cualquier <button> sin clase (o con una clase
+   que no define su propio look) cae acá en vez de mostrar el estilo nativo
+   del navegador (gris, con anillo de foco azul). Pensado mobile-first:
+   44px de alto mínimo es el tamaño de toque recomendado (Robinson usa
+   /repartos desde el celular). */
+button{
+  font-family: var(--font-body);
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:hover{ filter: brightness(1.05); }
+button:active{ filter: brightness(.95); }
+button:disabled{ opacity:.5; cursor:default; filter:none; }
+
+.btn-secundario{
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+.btn-secundario:hover{ background: var(--grey-tint); filter:none; }
+
+.btn-peligro{ background: var(--red); }
+
+/* Barra superior */
+header.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 22px;
+  background:#fff;
+  border-bottom:1px solid var(--line);
+}
+header.topbar .brand{
+  display:flex;
+  align-items:baseline;
+  flex-wrap: wrap;
+  gap:10px;
+}
+@media (max-width: 720px){
+  header.topbar{ padding: 10px 14px; }
+  .area-nav{
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    gap: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .area-nav a{ white-space: nowrap; }
+
+  /* iOS hace zoom automático al enfocar un input con font-size < 16px —
+     Robinson y Bodega escriben casi todo desde el celular. */
+  .motivo-select, .motivo-textarea{ font-size: 16px; }
+}
+header.topbar h1{
+  font-family: var(--font-title);
+  font-size: 19px;
+  margin:0;
+  font-weight:700;
+}
+header.topbar .area{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.area-nav{
+  display:flex;
+  gap: 14px;
+  margin-left: 18px;
+}
+.area-nav a{
+  font-size: 12.5px;
+  font-weight:600;
+  color: var(--ink-soft);
+  text-decoration:none;
+  padding: 3px 0;
+  border-bottom: 2px solid transparent;
+}
+.area-nav a.active{
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}
+.area-nav a:hover{ color: var(--ink); }
+.topbar-centro{
+  flex: 1 1 auto;
+  display:flex;
+  justify-content:center;
+}
+.vista-tabs{
+  display:flex;
+  background: var(--grey-tint);
+  border-radius: 100px;
+  padding: 3px;
+  gap: 2px;
+}
+.vista-tabs button{
+  border:none;
+  background:transparent;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight:600;
+  padding: 6px 14px;
+  border-radius: 100px;
+  cursor:pointer;
+  white-space: nowrap;
+}
+.vista-tabs button.active{
+  background: var(--teal);
+  color:#fff;
+}
+@media (max-width: 720px){
+  .topbar-centro{ order: 3; flex-basis: 100%; }
+}
+header.topbar .persona{
+  font-size: 13px;
+  color: var(--ink-soft);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+header.topbar .persona .avatar{
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700;
+}
+.persona-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:none;
+  border:none;
+  padding: 4px 8px 4px 4px;
+  border-radius: 100px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor:pointer;
+}
+.persona-btn:hover{ background: var(--grey-tint); color: var(--ink); }
+
+/* Tablero */
+.board{
+  display:flex;
+  gap: 14px;
+  padding: 18px;
+  overflow-x: auto;
+  align-items:flex-start;
+}
+.column{
+  flex: 0 0 250px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 200px;
+}
+/* Columna que aprovecha el espacio libre en vez de quedarse en un ancho
+   fijo — crece junto con lo que sobra en la fila (hasta un tope) y dentro
+   reparte las tarjetas en varias columnas con .cards-grid, para que una
+   columna con muchos pedidos también crezca "hacia los lados" en vez de
+   ser una sola lista vertical larga. Usado hoy en el tablero de Despacho;
+   .column-fluida-grande es la versión más ancha para su columna destacada
+   (ej. "Despacho"). */
+.column-fluida{
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+.column-fluida-grande{
+  flex: 1.6 1 340px;
+  max-width: 620px;
+}
+.cards-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 9px;
+  align-content: start;
+}
+.cards-grid .pedido-card{ margin-bottom: 0; }
+
+/* Maestro de Clientes — lista + detalle, no es un kanban. */
+.clientes-layout{
+  display:flex;
+  gap: 18px;
+  padding: 18px 22px;
+  align-items:flex-start;
+}
+.clientes-lista{
+  flex: 0 0 260px;
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+}
+.cliente-item{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap: 2px;
+  background:#fff;
+  color: var(--ink);
+  border:1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+  text-align:left;
+}
+.cliente-item:hover{ background: var(--grey-tint); }
+.cliente-item.activo{ border-color: var(--amber); background: var(--amber-tint); color: var(--ink); }
+.cliente-item-nombre{ font-size: 13px; font-weight:700; color: var(--ink); }
+.cliente-item-meta{ font-size: 11.5px; color: var(--ink-soft); }
+.clientes-detalle{
+  flex: 1 1 auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  min-width: 0;
+}
+.clientes-detalle h2{
+  font-family: var(--font-title);
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+/* Vista "Despachado" de Bodega — a todo el ancho de la pantalla en vez de
+   la grilla de columnas del kanban, con su propia barra de filtros. */
+.despachados-vista{
+  padding: 18px 22px;
+  width: 100%;
+}
+.despachados-filtros{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.despachados-vista .cards-grid{
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.column-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 4px 6px 10px;
+}
+.column-head .name{
+  font-family: var(--font-title);
+  font-weight:700;
+  font-size: 13.5px;
+}
+.column-head .count{
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  background: var(--grey-tint);
+  border-radius: 100px;
+  padding: 1px 8px;
+}
+
+/* Tarjeta de pedido */
+.pedido-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 12px;
+  margin-bottom: 9px;
+  cursor:pointer;
+  transition: box-shadow .12s ease, transform .12s ease;
+  position: relative;
+}
+.pedido-card:hover{
+  box-shadow: 0 2px 10px rgba(28,28,30,.08);
+  transform: translateY(-1px);
+}
+.pedido-card.nuevo{ border-color: var(--teal); }
+.pedido-card.dragging{ opacity: .4; }
+.column.drop-target{
+  outline: 2px dashed var(--teal);
+  outline-offset: -4px;
+  background: var(--teal-tint);
+}
+/* Sub-zona de arrastre dentro de una columna fusionada (ej. "Por pedir /
+   Salida de bodega", "Salida de bodega" en Bodega) — misma idea que
+   .column.drop-target pero con un mínimo de alto para poder soltar aunque
+   esté vacía. */
+.drop-zone{
+  min-height: 48px;
+  border-radius: 8px;
+  transition: outline-color .12s ease, background .12s ease;
+}
+.drop-zone.drop-target{
+  outline: 2px dashed var(--teal);
+  outline-offset: -2px;
+  background: var(--teal-tint);
+}
+.pedido-card .nuevo-marker{
+  position:absolute;
+  top:8px; right:9px;
+  color: var(--teal);
+  font-size: 13px;
+}
+.pedido-card .id{ font-weight:700; font-size: 13px; }
+.pedido-card .cliente{ font-size: 12.5px; color: var(--ink); margin-top: 2px; }
+.pedido-card .meta{
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  display:flex;
+  flex-wrap:wrap;
+  gap: 5px;
+}
+.badge{
+  display:inline-block;
+  font-size: 10.5px;
+  font-weight:700;
+  padding: 2px 7px;
+  border-radius: 100px;
+}
+.badge.pendiente_pago{ background: var(--red-tint); color: var(--red); }
+.badge.factura_anticipada{ background: var(--purple-tint); color: var(--purple); }
+.badge.ok{ background: var(--teal-tint); color: var(--teal); }
+.badge.stock_falta{ background: var(--red-tint); color: var(--red); }
+.badge.stock_ok{ background: var(--teal-tint); color: var(--teal); }
+.badge.stock_bloqueado{ background: var(--black); color:#fff; }
+
+/* Overlay + tarjeta de detalle */
+.overlay{
+  position: fixed; inset:0;
+  background: rgba(28,28,30,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 50;
+}
+
+.detalle{
+  background:#fff;
+  border-radius: 12px;
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 24px 18px;
+  position:relative;
+}
+.detalle h2{ font-family: var(--font-title); margin: 0 0 2px; font-size: 20px; }
+.detalle .sub{ color: var(--ink-soft); font-size: 13px; margin-bottom: 14px; }
+.detalle .row{
+  display:flex;
+  gap: 18px;
+  flex-wrap:wrap;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.detalle .field{ min-width: 130px; }
+.detalle .field .label{
+  font-size: 11px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+.detalle .field .value{ font-weight:600; }
+
+table.productos{ width:100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+table.productos th{
+  text-align:left;
+  font-size: 10.5px;
+  text-transform:uppercase;
+  color: var(--ink-soft);
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--line);
+}
+table.productos td{ padding: 7px 6px; border-bottom: 1px solid var(--line); }
+
+.close-x{
+  position:absolute; top:14px; right:16px;
+  border:none; background:none; cursor:pointer;
+  font-size: 18px; color: var(--ink-soft);
+  min-height:auto; padding:6px; border-radius:100px;
+}
+.close-x:hover{ background: var(--grey-tint); filter:none; }
+
+.guardar-cerrar{
+  position: sticky;
+  bottom: 0;
+  display:flex;
+  flex-wrap: wrap;
+  justify-content:flex-end;
+  gap: 8px;
+  padding-top: 14px;
+  margin-top: 10px;
+  background: linear-gradient(to top, #fff 60%, transparent);
+}
+
+input[type="checkbox"], input[type="radio"]{
+  width: 20px;
+  height: 20px;
+  accent-color: var(--teal);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.motivo-select, .motivo-textarea{
+  width:100%;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background:#fff;
+  color: var(--ink);
+}
+
+.link-btn{
+  display:inline-flex;
+  align-items:center;
+  background: var(--grey-tint);
+  border: 1px solid transparent;
+  color: var(--teal);
+  font-weight:700;
+  font-size: 12px;
+  cursor:pointer;
+  padding: 5px 10px;
+  border-radius: 7px;
+  text-decoration: none;
+  line-height: 1.3;
+  transition: background .12s ease, border-color .12s ease;
+}
+.link-btn:hover{ background: #fff; border-color: var(--teal); }
+.link-btn:active{ filter: brightness(.95); }
+.link-btn:disabled{ opacity:.5; cursor:default; }
+
+/* Compras — lotes agrupando columnas */
+.board.board-lotes{ display:flex; gap: 22px; align-items:flex-start; }
+.lote{ flex: 0 0 auto; display:flex; flex-direction:column; gap: 8px; }
+.lote-head{
+  font-family: var(--font-title);
+  font-weight:700;
+  font-size: 12.5px;
+  color: var(--purple);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  padding: 0 4px;
+}
+.lote-cols{ display:flex; gap: 10px; padding: 8px; background: var(--purple-tint); border-radius: 12px; }
+
+.reset-btn{
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  padding: 5px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+  margin-left: 14px;
+}
+.reset-btn:hover{ background: var(--grey-tint); color: var(--ink); }
+
+.caratula-sel{
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+/* Pestañas de columnas — solo se ven y actúan en pantallas angostas
+   (celular). En escritorio el tablero se ve completo, como siempre. */
+.tabs-columnas{
+  display:none;
+}
+@media (max-width: 720px){
+  .tabs-columnas{
+    display:flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 10px 12px 0;
+    background:#fff;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab-columna{
+    flex: 0 0 auto;
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    background: var(--grey-tint);
+    border:none;
+    border-radius: 100px 100px 0 0;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight:600;
+    color: var(--ink-soft);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab-columna .count{
+    font-size: 10.5px;
+    background:#fff;
+    border-radius:100px;
+    padding: 0 6px;
+  }
+  .tab-columna.active{
+    background: var(--teal);
+    color:#fff;
+  }
+  .tab-columna.active .count{ color: var(--teal); }
+
+  .board{
+    display:block;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  .column.tab-inactiva{ display:none; }
+  .column.tab-activa{
+    display:block;
+    width:100%;
+    flex-basis:auto;
+    border-radius:0;
+    border-left:none;
+    border-right:none;
+    min-height: calc(100vh - 220px);
+    overflow-y: auto;
+  }
+}
+
+/* Selección de perfil */
+.perfil-picker{
+  min-height: 100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 34px;
+  padding: 24px;
+  background: var(--bg);
+}
+.perfil-picker-head{ text-align:center; }
+.perfil-picker-head h1{
+  font-family: var(--font-title);
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+.perfil-picker-head p{
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  margin:0;
+}
+.perfil-picker-toggle{
+  display:flex;
+  justify-content:center;
+}
+.perfil-picker-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 18px;
+}
+.perfil-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  width: min(720px, 92vw);
+}
+.perfil-card-wrap{ position:relative; }
+.perfil-clave-form{
+  position:absolute;
+  top: calc(100% + 6px);
+  left:0; right:0;
+  z-index: 5;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(28,28,30,.12);
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+}
+.perfil-clave-form button{ padding: 7px 12px; font-size: 12.5px; }
+
+/* Panel de credenciales de testing — a un costado de la pantalla, no se
+   mezcla con el flujo centrado del selector. Se puede ocultar con el
+   toggle de más arriba (🔓/🔒) en cualquier momento. */
+.perfil-credenciales{
+  position:fixed;
+  top: 24px;
+  right: 24px;
+  max-width: 320px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 4px 16px rgba(28,28,30,.08);
+}
+.perfil-credenciales-tabla{
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  width:100%;
+}
+.perfil-credenciales-tabla th,
+.perfil-credenciales-tabla td{
+  text-align:left;
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.perfil-credenciales-tabla code{
+  background: var(--grey-tint);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+@media (max-width: 900px){
+  .perfil-credenciales{ position:static; margin-top: 10px; max-width: min(720px, 92vw); }
+}
+.perfil-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 8px;
+  background:#fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px 14px;
+  cursor:pointer;
+  width:100%;
+  font-family: var(--font-body);
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.perfil-card:hover{
+  box-shadow: 0 6px 18px rgba(28,28,30,.1);
+  transform: translateY(-2px);
+  border-color: var(--teal);
+}
+.perfil-avatar{
+  width:52px; height:52px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size: 19px;
+  font-weight:700;
+}
+.perfil-nombre{ font-weight:700; font-size: 14px; color: var(--ink); }
+.perfil-area{ font-size: 11.5px; color: var(--ink-soft); text-align:center; }
+
+/* Campanita de avisos (Bodega) */
+.avisos-bell-wrap{
+  position: fixed;
+  top: 64px;
+  right: 18px;
+  z-index: 55;
+}
+.avisos-bell{
+  position: relative;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(28,28,30,.08);
+}
+.avisos-burbuja{
+  position: absolute;
+  top: -4px; right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  animation: avisos-pulso 1.6s infinite;
+}
+@keyframes avisos-pulso{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(200,16,46,.45); }
+  50%{ box-shadow: 0 0 0 5px rgba(200,16,46,0); }
+}
+.avisos-dropdown{
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 300px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(28,28,30,.15);
+  padding: 12px;
+}
+/* En celular la campanita se va abajo a la izquierda (no tapa el topbar
+   ni las pestañas, y queda a mano del pulgar) — va DESPUÉS de la regla
+   base de arriba para que la pise en vez de al revés. */
+@media (max-width: 720px){
+  .avisos-bell-wrap{
+    top: auto;
+    right: auto;
+    bottom: 18px;
+    left: 18px;
+  }
+  .avisos-dropdown{
+    top: auto;
+    right: auto;
+    bottom: 48px;
+    left: 0;
+  }
+}
+.avisos-dropdown-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size: 12.5px;
+  font-weight:700;
+  margin-bottom: 8px;
+}
+.avisos-permiso-btn{
+  width:100%;
+  background: var(--teal-tint);
+  color: var(--teal);
+  border:none;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight:700;
+  cursor:pointer;
+  margin-bottom: 10px;
+}
+.avisos-lista{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+}
+.aviso-item{
+  background: var(--card);
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+.aviso-item p{ font-size: 12.5px; margin: 0 0 4px; }
+
+/* Tarjeta recién cambiada por un aviso */
+.pedido-card.recien-cambiado{
+  border-color: var(--teal);
+  animation: tarjeta-resaltada 1.8s ease-in-out 4;
+}
+@keyframes tarjeta-resaltada{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(31,138,122,0); background: #fff; }
+  50%{ box-shadow: 0 0 0 4px rgba(31,138,122,.25); background: var(--teal-tint); }
+}
+
+/* Recordatorios */
+.recordatorios{
+  padding: 10px;
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+}
+.recordatorios-ayuda{
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--amber-tint);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 0;
+}
+.recordatorio-nuevo{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+}
+.recordatorio-nuevo textarea{ resize: vertical; }
+.recordatorios-lista{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+}
+.recordatorios-vacio{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-align:center;
+  padding: 20px 0;
+}
+.recordatorio-card{
+  background:#fff;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.recordatorio-card p{
+  font-size: 13px;
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+.recordatorio-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.recordatorio-acciones{
+  display:flex;
+  gap: 12px;
+}
+.recordatorio-borrar{ color: var(--red) !important; }
+
+/* Aviso flotante "Deshacer" */
+.toast-deshacer{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--black);
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 10px 12px 16px;
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  z-index: 60;
+  max-width: 92vw;
+}
+.toast-deshacer button{
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toast-deshacer button.toast-cerrar{
+  color: rgba(255,255,255,.6);
+  font-weight: 400;
+  padding: 0 2px;
+}
+.toast-deshacer button.toast-cerrar:hover{ color: #fff; }
+
+/* Barra "Confirmar acciones" — Despacho: acumula acciones deshacibles
+   (sin límite de tiempo) hasta que Luisana confirma el lote. */
+.barra-confirmar{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: var(--black);
+  color: #fff;
+  padding: 10px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  z-index: 60;
+  box-shadow: 0 -6px 20px rgba(0,0,0,.2);
+}
+.barra-confirmar-lista{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y:auto;
+  font-size: 12.5px;
+}
+.barra-confirmar-item{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  white-space:nowrap;
+}
+.barra-confirmar-item button{
+  background:none;
+  border:none;
+  color: var(--teal);
+  font-weight:700;
+  font-size: 12px;
+  cursor:pointer;
+}
+.btn-confirmar-acciones{
+  background: var(--teal);
+  color:#fff;
+  border:none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.btn-confirmar-acciones:hover{ filter: brightness(1.05); }
+
+/* Cachos — otra columna más (horizontal): un pedido se arrastra ahí y se
+   queda, igual que las demás, con su hilo de comentarios debajo. */
+.column-cachos{
+  width: auto;
+  max-width: none;
+  margin: 0 22px 90px;
+  flex: none;
+}
+.column-cachos .cards-horizontal{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  gap: 10px;
+}
+.cacho-item{ display:flex; flex-direction:column; width: 200px; flex: 0 0 auto; }
+.cacho-item .pedido-card{ width: 100%; }
+.cacho-chip{
+  margin-top: 6px;
+  background: var(--amber-tint);
+  border: 1px solid var(--amber);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.cacho-chip:hover{ filter: brightness(0.97); }
+.cacho-chip-form{
+  margin-top: 6px;
+  background: var(--teal-tint);
+  border: 1px solid var(--teal);
+  border-radius: 8px;
+  padding: 6px;
+}
+.cacho-chip-form textarea{ width: 100%; font-size: 12px; }
+.cacho-chip-form .cacho-acciones{ margin-top: 4px; gap: 10px; }
+
+.cachos{
+  max-width: 900px;
+  margin: 28px auto 90px;
+  padding: 0 4px;
+}
+.cachos-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom: 10px;
+}
+.cachos-head h3{
+  font-family: var(--font-title);
+  font-size: 16px;
+  margin: 0;
+}
+.cachos-nuevo{
+  display:flex;
+  gap: 8px;
+  align-items:flex-start;
+  margin-bottom: 16px;
+}
+.cachos-nuevo textarea{ flex: 1; resize: vertical; }
+.btn-cacho-nuevo{
+  background: var(--teal);
+  color:#fff;
+  border:none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn-cacho-nuevo:hover{ filter: brightness(1.05); }
+.cachos-lista{ display:flex; flex-direction:column; gap: 10px; }
+.cacho-card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.cacho-texto{ font-size: 13.5px; margin-bottom: 4px; }
+.cacho-meta{ font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+.cacho-comentarios{
+  display:flex;
+  flex-direction:column;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: var(--grey-tint);
+  border-radius: 8px;
+}
+.cacho-comentario{ font-size: 12px; }
+.cacho-comentario-autor{ font-weight:700; }
+.cacho-comentario-fecha{ color: var(--ink-soft); }
+.cacho-comentar{ display:flex; gap: 8px; align-items:center; margin-bottom: 8px; }
+.cacho-comentar input{ flex: 1; }
+.cacho-acciones{ display:flex; gap: 14px; align-items:center; }
+.cachos.cachos-drag-over{
+  outline: 2px dashed var(--teal);
+  outline-offset: -6px;
+  background: var(--teal-tint);
+  border-radius: 12px;
+}
+.cacho-card-pendiente{ border-color: var(--teal); background: var(--teal-tint); }
+.cacho-card-pendiente textarea{ width:100%; margin: 8px 0; }
+.cacho-pedido-badge{
+  display:inline-block;
+  font-size: 10.5px;
+  font-weight:700;
+  color: var(--teal);
+  background: var(--teal-tint);
+  padding: 2px 8px;
+  border-radius: 100px;
+  margin-bottom: 6px;
+}
+
+/* Bodega — columna "Listo para despacho" dividida en 4 líneas */
+.column-ancha{ flex-basis: 320px; }
+.lineas-transportista{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+.linea-transportista{
+  background: var(--grey-tint);
+  border-radius: 8px;
+  padding: 8px;
+}
+.linea-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight:700;
+  color: var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  padding: 2px 4px 6px;
+}
+.despachar-todo-btn{
+  background: var(--purple);
+  color:#fff;
+  border:none;
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight:700;
+  text-transform:none;
+  letter-spacing:0;
+  cursor:pointer;
+}
+.despachar-todo-btn:hover{ filter: brightness(1.08); }
+.linea-head .count{
+  font-size: 10.5px;
+  background:#fff;
+  border-radius:100px;
+  padding: 0 6px;
+}
+.pedido-card{ position: relative; }
+.tick-despachar{
+  position:absolute;
+  bottom:8px;
+  right:9px;
+  width:26px; height:26px;
+  border-radius:50%;
+  border:none;
+  background: var(--teal);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.tick-despachar:hover{ filter: brightness(1.1); }
+
+/* Línea de tiempo — detalle de pedido del vendedor */
+.linea-tiempo{
+  display:flex;
+  align-items:flex-start;
+  gap: 2px;
+  margin: 14px 0 18px;
+}
+.hito{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  position:relative;
+}
+.hito::before{
+  content:"";
+  position:absolute;
+  top:5px;
+  left:-50%;
+  width:100%;
+  height:2px;
+  background: var(--line);
+  z-index:0;
+}
+.hito:first-child::before{ display:none; }
+.hito.hecho::before, .hito.actual::before{ background: var(--teal); }
+.hito .punto{
+  width:12px; height:12px;
+  border-radius:50%;
+  background: var(--line);
+  border: 2px solid #fff;
+  z-index:1;
+  margin-bottom:6px;
+}
+.hito.hecho .punto{ background: var(--teal); }
+.hito.actual .punto{ background: var(--teal); box-shadow: 0 0 0 3px var(--teal-tint); }
+.hito-label{
+  font-size: 10px;
+  color: var(--ink-soft);
+  line-height:1.25;
+  max-width: 80px;
+}
+.hito.actual .hito-label{ color: var(--teal); font-weight:700; }
+
+/* Vendedores / Admin / Repartos */
+.tabs{ display:flex; gap: 4px; padding: 14px 22px 0; background:#fff; border-bottom: 1px solid var(--line); }
+.tab{
+  background: var(--grey-tint);
+  border:none;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight:600;
+  color: var(--ink-soft);
+  cursor:pointer;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: background .12s ease, color .12s ease;
+}
+.tab:hover{ color: var(--ink); background: #ececec; }
+.tab.active{ color: var(--amber); background: #fff; border-bottom-color: var(--amber); }
+
+.maestros-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 22px;
+}
+.maestro-tile{ background:#fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.maestro-nombre{ font-family: var(--font-title); font-weight:700; font-size: 14.5px; margin-bottom: 6px; }
+.maestro-detalle{ font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+.mock-banner{
+  background: var(--amber-tint);
+  color: var(--amber);
+  font-size: 12px;
+  text-align:center;
+  padding: 6px;
+  font-weight:600;
+}
