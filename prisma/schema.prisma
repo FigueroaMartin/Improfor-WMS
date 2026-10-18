@@ -1,14 +1,17 @@
-// Fase 2 — persistencia real. SQLite ahora (cero configuración en esta
-// máquina); el día del despliegue se cambia el datasource a Postgres sin
-// tocar el resto del código (Prisma abstrae el motor).
+// Fase 2 → despliegue: Postgres real en Supabase (antes SQLite local de
+// desarrollo — el resto del código no cambió, Prisma abstrae el motor).
+// directUrl = conexión directa (puerto 5432, sin pgbouncer) que Prisma
+// necesita para migrar; url = la pooled (puerto 6543) que usa la app en
+// tiempo de ejecución (serverless en Vercel).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Pedido {
