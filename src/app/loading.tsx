@@ -1,13 +1,7 @@
-// Se muestra solo mientras la página destino está cargando sus datos
-// (primera entrada a una página, o router.refresh() tras una acción) — sin
-// esto la pantalla anterior queda congelada ese rato, que con la base de
-// datos en otra región se nota. Next.js la usa automáticamente, no hay que
-// llamarla a mano.
+import CargandoArea from "@/components/CargandoArea";
+
+// Red de seguridad para cualquier ruta sin su propio loading.tsx — cada
+// área ya tiene el suyo con mensaje y color propios.
 export default function Loading() {
-  return (
-    <div className="pagina-cargando">
-      <div className="spinner" />
-      <span className="pagina-cargando-texto">Cargando…</span>
-    </div>
-  );
+  return <CargandoArea texto="Cargando…" />;
 }
