@@ -721,6 +721,43 @@ input[type="checkbox"], input[type="radio"]{
   0%,100%{ box-shadow: 0 0 0 0 rgba(200,16,46,.45); }
   50%{ box-shadow: 0 0 0 5px rgba(200,16,46,0); }
 }
+
+/* Pantalla de carga — entre navegar a un área y que lleguen los datos
+   (consulta real a la base), o mientras router.refresh() trae lo nuevo
+   después de una acción. Sin esto la pantalla se queda en blanco/congelada
+   ese rato, que en producción (ida y vuelta a la base) se nota. */
+.pagina-cargando{
+  min-height: 100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 14px;
+  background: var(--bg);
+}
+.spinner{
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--teal);
+  animation: spinner-girar .7s linear infinite;
+}
+.spinner-sm{
+  width: 15px;
+  height: 15px;
+  border-width: 2px;
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 6px;
+}
+@keyframes spinner-girar{
+  to{ transform: rotate(360deg); }
+}
+.pagina-cargando-texto{
+  font-size: 13px;
+  color: var(--ink-soft);
+}
 .avisos-dropdown{
   position: absolute;
   top: 48px;

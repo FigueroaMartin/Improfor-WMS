@@ -21,6 +21,9 @@ export default function PerfilGrid({ perfiles, loginOnInicial }: { perfiles: typ
   const [clave, setClave] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
+  // Qué perfil está entrando ahora mismo — para mostrar su propio spinner
+  // en vez de dejar la tarjeta sin reacción hasta que redirija.
+  const [rolEntrando, setRolEntrando] = useState<string | null>(null);
 
   useEffect(() => {
     const guardado = localStorage.getItem(CLAVE_STORAGE);
@@ -48,6 +51,7 @@ export default function PerfilGrid({ perfiles, loginOnInicial }: { perfiles: typ
 
   async function entrar(rol: string, claveForm?: string) {
     setEntrando(true);
+    setRolEntrando(rol);
     setError(null);
     const fd = new FormData();
     fd.set("rol", rol);
@@ -58,6 +62,7 @@ export default function PerfilGrid({ perfiles, loginOnInicial }: { perfiles: typ
     if (res && res.ok === false) {
       setError(res.error ?? "No se pudo entrar.");
       setEntrando(false);
+      setRolEntrando(null);
     }
   }
 
@@ -87,12 +92,21 @@ export default function PerfilGrid({ perfiles, loginOnInicial }: { perfiles: typ
       <div className="perfil-grid">
         {visibles.map((p) => (
           <div key={p.rol} className="perfil-card-wrap">
-            <button type="button" className="perfil-card" onClick={() => onClickPerfil(p.rol)}>
-              <span className="perfil-avatar" style={{ background: `var(${p.colorVar}-tint)`, color: `var(${p.colorVar})` }}>
-                {p.inicial}
-              </span>
+            <button
+              type="button"
+              className="perfil-card"
+              onClick={() => onClickPerfil(p.rol)}
+              disabled={rolEntrando === p.rol}
+            >
+              {rolEntrando === p.rol ? (
+                <span className="spinner" />
+              ) : (
+                <span className="perfil-avatar" style={{ background: `var(${p.colorVar}-tint)`, color: `var(${p.colorVar})` }}>
+                  {p.inicial}
+                </span>
+              )}
               <span className="perfil-nombre">{p.nombre}</span>
-              <span className="perfil-area">{p.area}</span>
+              <span className="perfil-area">{rolEntrando === p.rol ? "Entrando…" : p.area}</span>
             </button>
 
             {rolAbierto === p.rol && (
