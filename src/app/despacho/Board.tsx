@@ -25,6 +25,7 @@ import {
   confirmarTransformacion,
   moverProductoEntrePedidos,
   solicitarAbono,
+  sincronizarPedidoLaudus,
 } from "./actions";
 import { obtenerPreferenciasDespacho } from "@/app/clientes/actions";
 import type { HistorialAccion, Cacho, CachoComentario } from "@prisma/client";
@@ -115,6 +116,30 @@ export default function Board({
   const [transformacion, setTransformacion] = useState<{ pedidoId: string; productos: ProductoTransform[]; error?: string } | null>(null);
   const [moverProducto, setMoverProducto] = useState<{ productoId: number; cantidad: number; destino: string; motivo: string; error?: string } | null>(null);
   const [abonoPendiente, setAbonoPendiente] = useState<{ pedidoId: string; monto: string; nota: string; error?: string } | null>(null);
+
+  // Práctica de integración con Laudus (solo lectura) — trae un pedido real
+  // por su N° de orden de venta y lo deja como ingreso nuevo, para probar el
+  // mapeo de campos antes de automatizar nada.
+  const [laudusOrdenId, setLaudusOrdenId] = useState("");
+  const [laudusSincronizando, setLaudusSincronizando] = useState(false);
+  const [laudusError, setLaudusError] = useState<string | null>(null);
+  const [laudusExito, setLaudusExito] = useState<string | null>(null);
+  function sincronizarDesdeLaudus() {
+    if (!laudusOrdenId.trim()) return;
+    setLaudusSincronizando(true);
+    setLaudusError(null);
+    setLaudusExito(null);
+    sincronizarPedidoLaudus(laudusOrdenId.trim()).then((res) => {
+      setLaudusSincronizando(false);
+      if (!res.ok) {
+        setLaudusError(res.error);
+        return;
+      }
+      setLaudusOrdenId("");
+      setLaudusExito(`${res.pedidoId}: traído desde Laudus ✓`);
+      refrescar();
+    });
+  }
 
   // Acciones pendientes de confirmar: en vez de un toast que se cierra solo
   // a los 8s, quedan aquí (persistentes) hasta que Luisana apriete
@@ -410,6 +435,26 @@ export default function Board({
                 <span className="name">{col.nombre}</span>
                 <span className="count">{items.length}</span>
               </div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "0 22px 10px" }}>
+                <input
+                  className="motivo-select"
+                  style={{ maxWidth: 160 }}
+                  placeholder="N° orden Laudus"
+                  value={laudusOrdenId}
+                  onChange={(e) => setLaudusOrdenId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sincronizarDesdeLaudus()}
+                  disabled={laudusSincronizando}
+                />
+                <button className="btn btn-secundario" onClick={sincronizarDesdeLaudus} disabled={laudusSincronizando || !laudusOrdenId.trim()}>
+                  {laudusSincronizando ? <span className="spinner spinner-sm" /> : "Sincronizar desde Laudus"}
+                </button>
+              </div>
+              {laudusError && (
+                <div style={{ padding: "0 22px 10px", fontSize: 12.5, color: "var(--red)" }}>⚠ {laudusError}</div>
+              )}
+              {laudusExito && (
+                <div style={{ padding: "0 22px 10px", fontSize: 12.5, color: "var(--teal)" }}>{laudusExito}</div>
+              )}
               <div className="cards cards-grid">{items.map(renderCard)}</div>
             </div>
           );
@@ -664,6 +709,7 @@ export default function Board({
                   >
                     <option value="">Sin marcar</option>
                     <option value="Pendiente de pago">Pendiente de pago</option>
+                    <option value="Pagado">Pagado</option>
                   </select>
                 </div>
                 <div className="field">
@@ -704,6 +750,7 @@ export default function Board({
                   >
                     <option value="">Sin marcar</option>
                     <option value="Pendiente de pago">Pendiente de pago</option>
+                    <option value="Pagado">Pagado</option>
                   </select>
                 </div>
                 <div className="field">

@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { avisarBodega } from "@/lib/avisos";
 import { COLUMNAS_DESPACHO } from "@/lib/dominio";
 import { generarOrdenesDesdePedido } from "@/lib/comprasCascada";
+import { obtenerOrdenVentaLaudus, esLineaFlete } from "@/lib/laudus";
 
 function revalidarTodo() {
   revalidatePath("/despacho");
@@ -549,4 +550,79 @@ export async function moverProductoEntrePedidos(
 
   revalidarTodo();
   return { ok: true };
+}
+
+// --- Laudus (práctica — solo lectura) -------------------------------------
+// Trae UN pedido real de Laudus por su N° de orden de venta y lo crea como
+// ingreso en Despacho, para practicar el mapeo de campos antes de construir
+// una sincronización automática. No se conecta a Compras/Facturación/
+// Cobranzas todavía — eso se clasifica a mano como cualquier ingreso.
+export async function sincronizarPedidoLaudus(
+  salesOrderId: string
+): Promise<{ ok: true; pedidoId: string } | { ok: false; error: string }> {
+  const idLimpio = salesOrderId.trim().replace(/\D/g, "");
+  if (!idLimpio) return { ok: false, error: "Ingresa un N° de orden de venta de Laudus válido." };
+
+  const pedidoId = `LAU-${idLimpio}`;
+  const existente = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+  if (existente) return { ok: false, error: `Ese pedido ya se sincronizó antes (${pedidoId}).` };
+
+  let orden;
+  try {
+    orden = await obtenerOrdenVentaLaudus(Number(idLimpio));
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo conectar con Laudus." };
+  }
+
+  const items = (orden.items || []).filter((it) => !esLineaFlete(it.product?.sku));
+  if (items.length === 0) return { ok: false, error: "Ese pedido no tiene productos (o son solo flete)." };
+
+  const skus = items.map((it) => it.product.sku);
+  const maestros = await prisma.productoMaestro.findMany({ where: { sku: { in: skus } } });
+  const maestroPorSku = new Map(maestros.map((m) => [m.sku, m]));
+
+  // Mismas preferencias que ya usa Luisana al abrir un ingreso manual — si
+  // el cliente tiene documento/modo de despacho preferido, se precargan acá
+  // también en vez de dejarlos en blanco.
+  const cliente = await prisma.cliente.findUnique({
+    where: { nombre: orden.customer.name },
+    select: { documentoPreferido: true, modoDespachoPreferido: true },
+  });
+
+  const contacto = orden.contact ? `${orden.contact.firstName ?? ""} ${orden.contact.lastName ?? ""}`.trim() : "";
+
+  const creado = await prisma.pedido.create({
+    data: {
+      id: pedidoId,
+      columnaDespacho: "ingreso",
+      cliente: orden.customer.name,
+      contacto: contacto || orden.customer.email || "",
+      vendedor: "",
+      documento: cliente?.documentoPreferido ?? "",
+      modoDespacho: cliente?.modoDespachoPreferido ?? "",
+      nuevo: true,
+      direccionEntrega: orden.deliveryAddress?.address ?? "",
+      comuna: orden.deliveryAddress?.county ?? "",
+      telefonoContacto: "",
+      productos: {
+        create: items.map((it) => {
+          const maestro = maestroPorSku.get(it.product.sku);
+          const stock = maestro?.stockActual ?? it.quantity;
+          return {
+            sku: it.product.sku,
+            nombre: it.itemDescription?.trim() || it.product.description,
+            cantidad: Math.round(it.quantity),
+            stock,
+            estado: stock >= it.quantity ? "ok" : "falta",
+            proveedor: maestro?.proveedor ?? null,
+          };
+        }),
+      },
+    },
+  });
+
+  await guardarHistorial(creado, `Traído desde Laudus — orden de venta #${idLimpio} (${orden.customer.name})`);
+
+  revalidarTodo();
+  return { ok: true, pedidoId };
 }
