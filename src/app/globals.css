@@ -302,6 +302,30 @@ header.topbar .persona .avatar{
   flex: 1.6 1 340px;
   max-width: 620px;
 }
+/* Agrupación puramente visual (Despacho, vista "Ingreso de pedidos") —
+   junta Por pedir/Salida de bodega + Despacho + Falta pago bajo un mismo
+   rótulo "En Bodega", sin cambiar ninguna regla ni columna real. */
+.grupo-bodega{
+  flex: 1 1 auto;
+  background: var(--grey-tint);
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.grupo-bodega-titulo{
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+.grupo-bodega-cols{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+}
+.grupo-bodega-cols .column{ background: #fff; }
 .cards-grid{
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));

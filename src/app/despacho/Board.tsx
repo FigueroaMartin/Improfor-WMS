@@ -498,49 +498,89 @@ export default function Board({
           );
         })()}
 
-        {/* "Por pedir" y "Salida de bodega" van fusionadas en una sola
-            columna visual (siguen siendo destinos distintos por debajo —
-            Por pedir dispara la cascada de Compras, Salida de bodega la
-            monitorea Bodega — cada fila es su propia zona de arrastre). */}
+        {/* Agrupación puramente visual — "En Bodega" envuelve todo lo que en
+            esta vista ya está en manos de Bodega (Por pedir, Salida de
+            bodega, Despacho, Falta pago). No cambia ninguna regla: solo
+            junta las columnas bajo un mismo rótulo. */}
         {vista !== "despachados" && (() => {
-          const porPedir = pedidos.filter((p) => p.columnaDespacho === "por_pedir");
-          const salidaBodega = pedidos.filter((p) => p.columnaDespacho === "salida_bodega");
+          const porPedirTodos = pedidos.filter((p) => p.columnaDespacho === "por_pedir");
+          const salidaBodegaTodos = pedidos.filter((p) => p.columnaDespacho === "salida_bodega");
+          const despachoTodos = pedidos.filter((p) => p.columnaDespacho === "despacho");
+
+          // "Falta pago" es la misma lista de siempre (situacionCobro =
+          // Pendiente de pago), solo que acá se muestra en su propia
+          // columna en vez de mezclada con las demás — no es un estado
+          // nuevo, solo otra forma de agruparlas.
+          const esFaltaPago = (p: PedidoConProductos) => p.situacionCobro === "Pendiente de pago";
+          const porPedir = porPedirTodos.filter((p) => !esFaltaPago(p));
+          const salidaBodega = salidaBodegaTodos.filter((p) => !esFaltaPago(p));
+          const despacho = despachoTodos.filter((p) => !esFaltaPago(p));
+          const faltaPago = [...porPedirTodos, ...salidaBodegaTodos, ...despachoTodos].filter(esFaltaPago);
+
           return (
-            <div className="column column-fluida">
-              <div className="column-head">
-                <span className="name">Por pedir / Salida de bodega</span>
-                <span className="count">{porPedir.length + salidaBodega.length}</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", marginBottom: 6 }}>
-                    ① Por pedir ({porPedir.length})
+            <div className="grupo-bodega">
+              <div className="grupo-bodega-titulo">📦 En Bodega</div>
+              <div className="grupo-bodega-cols">
+                <div className="column column-fluida">
+                  <div className="column-head">
+                    <span className="name">Por pedir / Salida de bodega</span>
+                    <span className="count">{porPedir.length + salidaBodega.length}</span>
                   </div>
-                  {zonaArrastrable("por_pedir", <div className="cards cards-grid">{porPedir.map(renderCard)}</div>)}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", marginBottom: 6 }}>
+                        ① Por pedir ({porPedir.length})
+                      </div>
+                      {zonaArrastrable("por_pedir", <div className="cards cards-grid">{porPedir.map(renderCard)}</div>)}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", marginBottom: 6 }}>
+                        ② Salida de bodega ({salidaBodega.length})
+                      </div>
+                      {zonaArrastrable("salida_bodega", <div className="cards cards-grid">{salidaBodega.map(renderCard)}</div>)}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", marginBottom: 6 }}>
-                    ② Salida de bodega ({salidaBodega.length})
+
+                <div
+                  className={"column column-fluida-grande" + (dragOverCol === "despacho" ? " drop-target" : "")}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragOverCol !== "despacho") setDragOverCol("despacho");
+                  }}
+                  onDragLeave={() => setDragOverCol((c) => (c === "despacho" ? null : c))}
+                  onDrop={() => onDrop("despacho")}
+                >
+                  <div className="column-head">
+                    <span className="name">Despacho</span>
+                    <span className="count">{despacho.length}</span>
                   </div>
-                  {zonaArrastrable("salida_bodega", <div className="cards cards-grid">{salidaBodega.map(renderCard)}</div>)}
+                  <div className="cards cards-grid">{despacho.map(renderCard)}</div>
+                </div>
+
+                <div className="column column-fluida">
+                  <div className="column-head">
+                    <span className="name">Falta pago</span>
+                    <span className="count">{faltaPago.length}</span>
+                  </div>
+                  <div className="cards cards-grid">{faltaPago.map(renderCard)}</div>
                 </div>
               </div>
             </div>
           );
         })()}
 
-        {COLUMNAS_DESPACHO.filter((col) => columnasVista.includes(col.id)).map((col) => {
+        {COLUMNAS_DESPACHO.filter((col) => columnasVista.includes(col.id) && vista === "despachados").map((col) => {
           let items = pedidos.filter((p) => p.columnaDespacho === col.id);
-          if (vista === "despachados" && textoBusqueda) {
+          if (textoBusqueda) {
             items = items.filter(
               (p) => p.id.toLowerCase().includes(textoBusqueda) || p.cliente.toLowerCase().includes(textoBusqueda)
             );
           }
-          const esDespacho = col.id === "despacho";
           return (
             <div
               key={col.id}
-              className={"column " + (esDespacho ? "column-fluida-grande" : "column-fluida") + (dragOverCol === col.id ? " drop-target" : "")}
+              className={"column column-fluida" + (dragOverCol === col.id ? " drop-target" : "")}
               onDragOver={(e) => {
                 e.preventDefault();
                 if (dragOverCol !== col.id) setDragOverCol(col.id);
