@@ -114,6 +114,7 @@ export default function Board({
   const [claSituacionCobro, setClaSituacionCobro] = useState<string>("");
   const [claFacturaAnticipada, setClaFacturaAnticipada] = useState(false);
   const [claError, setClaError] = useState<string | null>(null);
+  const [mostrarLaudus, setMostrarLaudus] = useState(false);
   const [pedidoCachoPendiente, setPedidoCachoPendiente] = useState<string | null>(null);
   const [textoCachoPendiente, setTextoCachoPendiente] = useState("");
   const [cachosDragOver, setCachosDragOver] = useState(false);
@@ -252,6 +253,7 @@ export default function Board({
   function abrirConHistorial(p: PedidoConProductos) {
     setHistorial([]);
     setAbierto(p);
+    setMostrarLaudus(false);
     // En blanco por defecto — salvo que el Maestro de Clientes tenga una
     // preferencia guardada para este cliente, en cuyo caso se pre-selecciona
     // sola (sigue siendo editable, no obliga a nada).
@@ -671,6 +673,45 @@ export default function Board({
             <div className="sub">
               {abierto.cliente} — {abierto.contacto}
             </div>
+
+            {abierto.salesOrderIdLaudus != null && (
+              <div style={{ marginBottom: 14 }}>
+                <button className="link-btn" onClick={() => setMostrarLaudus((v) => !v)}>
+                  {mostrarLaudus ? "▾" : "▸"} Datos de Laudus (orden de venta #{abierto.salesOrderIdLaudus})
+                </button>
+                {mostrarLaudus && (
+                  <div style={{ marginTop: 8, padding: "10px 12px", background: "var(--grey-tint)", borderRadius: 8, fontSize: 12.5 }}>
+                    <div><b>N° orden de venta:</b> {abierto.salesOrderIdLaudus}</div>
+                    <div><b>RUT cliente:</b> {abierto.clienteVATIdLaudus || "—"}</div>
+                    <div><b>Email cliente:</b> {abierto.clienteEmailLaudus || "—"}</div>
+                    <div><b>Transportista sugerido:</b> {abierto.transportistaLaudus || "—"}</div>
+                    <div><b>Fecha de emisión:</b> {abierto.fechaEmisionLaudus ? fechaCorta(abierto.fechaEmisionLaudus) : "—"}</div>
+                    <div><b>Notas del pedido:</b> {abierto.notasLaudus || "—"}</div>
+                    <div style={{ marginTop: 8 }}>
+                      <b>Líneas:</b>
+                      <table className="productos" style={{ marginTop: 4 }}>
+                        <thead>
+                          <tr>
+                            <th>SKU</th>
+                            <th>itemId Laudus</th>
+                            <th>Precio unitario</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {abierto.productos.map((p) => (
+                            <tr key={p.id}>
+                              <td>{p.sku}</td>
+                              <td>{p.itemIdLaudus ?? "—"}</td>
+                              <td>{p.precioUnitarioLaudus != null ? `$ ${Math.round(p.precioUnitarioLaudus).toLocaleString("es-CL")}` : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {abierto.columnaDespacho === "ingreso" ? (
               <div className="row" style={{ background: "var(--teal-tint)", padding: "12px 14px", borderRadius: 10, marginBottom: 14 }}>
