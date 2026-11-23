@@ -28,7 +28,6 @@ export const PERFILES = [
   { rol: "bodega", nombre: "Fernando", clave: "bodega123", inicial: "F", colorVar: "--blue", home: "/bodega", area: "Bodega", fase1: true },
   { rol: "cobranzas", nombre: "María José", clave: "cobranzas123", inicial: "M", colorVar: "--red", home: "/cobranzas", area: "Cobranzas", fase1: true },
   { rol: "compras", nombre: "Marcela", clave: "compras123", inicial: "M", colorVar: "--purple", home: "/compras", area: "Compras", fase1: true },
-  { rol: "clientes", nombre: "Maestro", clave: "clientes123", inicial: "M", colorVar: "--amber", home: "/clientes", area: "Maestro de Clientes", fase1: true },
   { rol: "vendedor", nombre: "Ana Silva", clave: "vendedor123", inicial: "A", colorVar: "--amber", home: "/vendedores", area: "Vendedores/Admin", fase1: false },
   { rol: "finanzas", nombre: "Francisca", clave: "finanzas123", inicial: "F", colorVar: "--blue", home: "/finanzas", area: "Gerencia Finanzas", fase1: false },
   { rol: "admin", nombre: "Alex", clave: "admin123", inicial: "A", colorVar: "--ink", home: "/despacho", area: "Administración (todas las áreas)", fase1: false },
@@ -52,13 +51,14 @@ export async function loginRequerido() {
 // Cada página de área llama esto al principio. Si no hay perfil elegido,
 // manda a la pantalla de selección; si el perfil es de otra área, lo manda
 // a SU área en vez de dejarlo entrar (admin entra a todas).
-export async function requireRol(rolEsperado: Rol) {
+export async function requireRol(rolEsperado: Rol | Rol[]) {
   const cookieStore = await cookies();
   const rol = cookieStore.get(COOKIE_PERFIL)?.value;
   const perfil = rol ? perfilPorRol(rol) : undefined;
+  const esperados = Array.isArray(rolEsperado) ? rolEsperado : [rolEsperado];
 
   if (!perfil) redirect("/");
-  if (perfil.rol !== rolEsperado && perfil.rol !== "admin") redirect(perfil.home);
+  if (!(esperados as string[]).includes(perfil.rol) && perfil.rol !== "admin") redirect(perfil.home);
 
   return perfil;
 }

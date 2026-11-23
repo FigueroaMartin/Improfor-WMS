@@ -11,7 +11,7 @@ const AREAS = [
   { href: "/bodega", label: "Bodega", icono: "📦", roles: ["bodega"] },
   { href: "/cobranzas", label: "Cobranzas", icono: "💰", roles: ["cobranzas"] },
   { href: "/compras", label: "Compras", icono: "🛒", roles: ["compras"] },
-  { href: "/clientes", label: "Maestro de Clientes", icono: "👥", roles: ["clientes"] },
+  { href: "/clientes", label: "Maestro de Clientes", icono: "👥", roles: ["despacho", "bodega"] },
   { href: "/vendedores", label: "Vendedores/Admin", icono: "📊", roles: ["vendedor", "admin"] },
   { href: "/finanzas", label: "Finanzas", icono: "🏦", roles: ["finanzas", "admin"] },
 ];
