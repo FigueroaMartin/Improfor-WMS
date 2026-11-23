@@ -139,8 +139,14 @@ export default function Board({
         )}
         <div className="id">{p.id}</div>
         <div className="cliente">{p.cliente}</div>
-        {p.llegadaBodegaEn && col.id !== "despachado" && (() => {
-          const { texto, urgencia } = tiempoEsperandoBodega(p.llegadaBodegaEn);
+        {(() => {
+          // "Por preparar" usa su propio timer (desde que quedó listo para
+          // prepararse de verdad, no desde que Luisana lo mandó a Despacho
+          // — puede ser más tarde si pasó retenido). Las demás columnas
+          // activas siguen con el timer general de Bodega.
+          const desde = col.id === "por_preparar" ? p.llegadaPorPrepararEn : p.llegadaBodegaEn;
+          if (!desde || col.id === "despachado") return null;
+          const { texto, urgencia } = tiempoEsperandoBodega(desde);
           const color = urgencia === "urgente" ? "var(--red)" : urgencia === "atencion" ? "var(--amber)" : "var(--ink-soft)";
           return (
             <div style={{ fontSize: 11, color, marginTop: 2 }} title="Tiempo esperando en Bodega">

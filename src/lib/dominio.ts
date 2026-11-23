@@ -225,6 +225,18 @@ export function calcColumnaBodega(p: PedidoConProductos): string | null {
   return "por_preparar";
 }
 
+// Mismo cálculo que calcColumnaBodega pero tomando valores sueltos en vez
+// del objeto completo — para poder comparar "antes" vs "después" de una
+// acción y detectar el instante exacto en que un pedido ENTRA a "Por
+// preparar" (arranca ahí el timer de Bodega), sin repetir la lógica en cada
+// server action que puede causar esa transición (clasificar, mover,
+// liberar retención, volver desde Bodega).
+export function quedaEnPorPreparar(columnaDespacho: string, situacionCobro: string | null, facturaAnticipada: boolean) {
+  if (!["salida_bodega", "despacho"].includes(columnaDespacho)) return false;
+  if (situacionCobro === "Pendiente de pago" || facturaAnticipada) return false;
+  return columnaDespacho === "despacho";
+}
+
 export function calcColumnaCobranza(p: PedidoConProductos): string | null {
   if (p.columnaDespacho === "eliminado") {
     return p.facturaNumero ? "eliminados_nc" : null;

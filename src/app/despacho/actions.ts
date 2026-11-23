@@ -9,10 +9,9 @@ import { prisma } from "@/lib/prisma";
 import type { Pedido } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { avisarBodega } from "@/lib/avisos";
-import { COLUMNAS_DESPACHO } from "@/lib/dominio";
+import { COLUMNAS_DESPACHO, esLineaFlete, quedaEnPorPreparar } from "@/lib/dominio";
 import { generarOrdenesDesdePedido } from "@/lib/comprasCascada";
 import { obtenerOrdenVentaLaudus, obtenerClienteLaudus } from "@/lib/laudus";
-import { esLineaFlete } from "@/lib/dominio";
 
 function revalidarTodo() {
   revalidatePath("/despacho");
@@ -163,8 +162,15 @@ export async function moverPedido(pedidoId: string, columnaDestino: string) {
   const historialId = await guardarHistorial(antes, `Movido a «${nombreCol}»`);
 
   // Recién entra al radar de Bodega (Luisana lo mandó a preparar) — arranca
-  // el timer de "lleva X esperando" que se muestra en sus tarjetas.
+  // el timer de "lleva X esperando" del tablero de Luisana.
   const entraABodegaRecien = !["salida_bodega", "despacho"].includes(antes.columnaDespacho) && ["salida_bodega", "despacho"].includes(columnaDestino);
+
+  // Timer propio de Bodega — distinto del anterior: arranca justo cuando
+  // el pedido queda listo para que Bodega lo prepare de verdad (puede ser
+  // más tarde si venía retenido).
+  const entraAPorPrepararRecien =
+    !quedaEnPorPreparar(antes.columnaDespacho, antes.situacionCobro, antes.facturaAnticipada) &&
+    quedaEnPorPreparar(columnaDestino, antes.situacionCobro, antes.facturaAnticipada);
 
   await prisma.pedido.update({
     where: { id: pedidoId },
@@ -172,6 +178,7 @@ export async function moverPedido(pedidoId: string, columnaDestino: string) {
       columnaDespacho: columnaDestino,
       nuevo: false,
       ...(entraABodegaRecien ? { llegadaBodegaEn: new Date() } : {}),
+      ...(entraAPorPrepararRecien ? { llegadaPorPrepararEn: new Date() } : {}),
     },
   });
 
@@ -298,6 +305,7 @@ export async function clasificarIngreso(
   );
 
   const entraABodega = ["salida_bodega", "despacho"].includes(datos.columnaDestino);
+  const entraAPorPreparar = quedaEnPorPreparar(datos.columnaDestino, datos.situacionCobro ?? null, datos.facturaAnticipada ?? false);
 
   await prisma.pedido.update({
     where: { id: pedidoId },
@@ -310,6 +318,7 @@ export async function clasificarIngreso(
       nuevo: false,
       ...(esSendu ? { numeroGuiaStarken: datos.otSendu!.trim() } : {}),
       ...(entraABodega ? { llegadaBodegaEn: new Date() } : {}),
+      ...(entraAPorPreparar ? { llegadaPorPrepararEn: new Date() } : {}),
     },
   });
 
@@ -341,8 +350,21 @@ export async function actualizarSituacionCobro(pedidoId: string, situacion: stri
   const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
   if (!pedido) return { ok: false, error: "Pedido no encontrado" };
 
+  // Si esto libera un pedido retenido (venía "Pendiente de pago"), recién
+  // ahí arranca de verdad el timer de Bodega — no cuando Luisana lo mandó a
+  // Despacho originalmente, que fue antes de quedar retenido.
+  const entraAPorPreparar =
+    !quedaEnPorPreparar(pedido.columnaDespacho, pedido.situacionCobro, pedido.facturaAnticipada) &&
+    quedaEnPorPreparar(pedido.columnaDespacho, situacion, pedido.facturaAnticipada);
+
   const historialId = await guardarHistorial(pedido, `Situación de cobro → ${situacion ?? "sin marcar"}`);
-  await prisma.pedido.update({ where: { id: pedidoId }, data: { situacionCobro: situacion } });
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: {
+      situacionCobro: situacion,
+      ...(entraAPorPreparar ? { llegadaPorPrepararEn: new Date() } : {}),
+    },
+  });
   revalidarTodo();
   return { ok: true, historialId };
 }
@@ -353,8 +375,18 @@ export async function actualizarFacturaAnticipada(pedidoId: string, valor: boole
   const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
   if (!pedido) return { ok: false, error: "Pedido no encontrado" };
 
+  const entraAPorPreparar =
+    !quedaEnPorPreparar(pedido.columnaDespacho, pedido.situacionCobro, pedido.facturaAnticipada) &&
+    quedaEnPorPreparar(pedido.columnaDespacho, pedido.situacionCobro, valor);
+
   const historialId = await guardarHistorial(pedido, `Factura anticipada → ${valor ? "sí" : "no"}`);
-  await prisma.pedido.update({ where: { id: pedidoId }, data: { facturaAnticipada: valor } });
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: {
+      facturaAnticipada: valor,
+      ...(entraAPorPreparar ? { llegadaPorPrepararEn: new Date() } : {}),
+    },
+  });
   revalidarTodo();
   return { ok: true, historialId };
 }

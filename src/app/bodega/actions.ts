@@ -199,6 +199,8 @@ export async function moverSalida(pedidoId: string, columnaBodegaDestino: string
         comuna: null,
         telefonoContacto: null,
         numeroGuiaStarken: null,
+        // Vuelve a preparación de verdad — reinicia el timer de Bodega.
+        llegadaPorPrepararEn: new Date(),
       },
     });
 

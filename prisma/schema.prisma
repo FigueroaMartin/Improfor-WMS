@@ -86,12 +86,16 @@ model Pedido {
   fotoEntregaRobinson        String?
   comentarioEntregaRobinson String?
 
-  // Timer de Bodega (§ apuntes sueltos) — momento en que el pedido entró al
-  // radar de Bodega (clasificado a "Salida de bodega" o "Despacho" desde
-  // Ingreso, o devuelto desde "Por pedir"). Sirve para mostrar "lleva X
-  // esperando" en las tarjetas — no se toca al volver a «Por preparar» desde
-  // «Listo para despacho» (sigue siendo el mismo tiempo en bodega).
-  llegadaBodegaEn DateTime?
+  // Dos timers separados (§ apuntes sueltos):
+  // llegadaBodegaEn = entra a Despacho/Salida de bodega (Luisana lo mandó)
+  //   — mide desde que Luisana lo clasificó, para su propio tablero.
+  // llegadaPorPrepararEn = entra puntualmente a "Por preparar" (Bodega) —
+  //   puede ser más tarde que llegadaBodegaEn si el pedido pasó retenido
+  //   (Pendiente de pago/factura anticipada) antes de liberarse, y se
+  //   reinicia cada vez que vuelve a Por preparar desde Listo para
+  //   despacho — mide el tiempo real de trabajo de Bodega.
+  llegadaBodegaEn      DateTime?
+  llegadaPorPrepararEn DateTime?
 
   // Todo lo que se extrae del pedido de Laudus al sincronizarlo queda acá,
   // aunque hoy no se use en ninguna pantalla — mejor guardarlo ahora que

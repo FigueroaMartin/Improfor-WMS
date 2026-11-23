@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { VISTA_DEFAULT } from "./VistaTabs";
-import { COLUMNAS_DESPACHO, MOTIVOS_CANCELACION, MOTIVOS_MOVER_PRODUCTO, TIPOS_DOCUMENTO, MODOS_DESPACHO, estadoStockPedido, type PedidoConProductos } from "@/lib/dominio";
+import { COLUMNAS_DESPACHO, MOTIVOS_CANCELACION, MOTIVOS_MOVER_PRODUCTO, TIPOS_DOCUMENTO, MODOS_DESPACHO, estadoStockPedido, tiempoEsperandoBodega, type PedidoConProductos } from "@/lib/dominio";
 import {
   moverPedido,
   eliminarPedido,
@@ -104,6 +104,13 @@ export default function Board({
   const [historial, setHistorial] = useState<HistorialAccion[]>([]);
   const [subiendo, setSubiendo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Tick para que el timer "lleva X en Despacho" se actualice solo.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
   // Arrancan en blanco a propósito — nada preseleccionado por defecto, para
   // obligar a elegir explícitamente y evitar errores por dejar pasar el
   // valor que haya quedado marcado.
@@ -388,6 +395,15 @@ export default function Board({
           {p.oc ? ` · ${p.oc}` : ""}
         </div>
         <div className="cliente">{p.cliente}</div>
+        {p.columnaDespacho === "despacho" && p.llegadaBodegaEn && (() => {
+          const { texto, urgencia } = tiempoEsperandoBodega(p.llegadaBodegaEn);
+          const color = urgencia === "urgente" ? "var(--red)" : urgencia === "atencion" ? "var(--amber)" : "var(--ink-soft)";
+          return (
+            <div style={{ fontSize: 11, color, marginTop: 2 }} title="Tiempo en Despacho">
+              ⏱ lleva {texto} en Despacho
+            </div>
+          );
+        })()}
         <div className="meta">
           {badgeCobro(p.situacionCobro)}
           {p.facturaAnticipada && <span className="badge factura_anticipada">Fact. anticipada</span>}
