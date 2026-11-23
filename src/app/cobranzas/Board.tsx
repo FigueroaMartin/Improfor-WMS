@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { COLUMNAS_COBRANZAS, type PedidoConProductos } from "@/lib/dominio";
+import { VISTA_DEFAULT, VISTAS } from "./VistaTabs";
 import {
   registrarAbono,
   simularPagoERP,
@@ -56,6 +57,8 @@ function filaAnticipada(p: Item): "solicitud" | "emitidas" | "completa" {
 
 export default function Board({ items }: { items: Item[] }) {
   const router = useRouter();
+  const vista = useSearchParams().get("vista") || VISTA_DEFAULT;
+  const columnasVisibles = (VISTAS.find((v) => v.id === vista) ?? VISTAS[0]).columnas as readonly string[];
   const [, startTransition] = useTransition();
   const [abierto, setAbierto] = useState<Item | null>(null);
   const [monto, setMonto] = useState("");
@@ -93,7 +96,7 @@ export default function Board({ items }: { items: Item[] }) {
   return (
     <>
       <main className="board">
-        {COLUMNAS_COBRANZAS.map((col) => {
+        {COLUMNAS_COBRANZAS.filter((col) => columnasVisibles.includes(col.id)).map((col) => {
           const colItems = items.filter((c) => c.columnaCobranza === col.id);
           return (
             <div key={col.id} className="column">

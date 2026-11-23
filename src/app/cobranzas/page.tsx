@@ -3,6 +3,7 @@ import { calcColumnaCobranza } from "@/lib/dominio";
 import { requireRol } from "@/lib/perfil";
 import Board from "./Board";
 import Topbar from "@/components/Topbar";
+import VistaTabs from "./VistaTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,14 @@ export default async function CobranzasPage() {
 
   return (
     <>
-      <Topbar area="Cobranzas" personaNombre={perfil.nombre} personaInicial={perfil.inicial} colorVar="--red" rol={perfil.rol} />
+      <Topbar
+        area="Cobranzas"
+        personaNombre={perfil.nombre}
+        personaInicial={perfil.inicial}
+        colorVar="--red"
+        rol={perfil.rol}
+        centro={<VistaTabs />}
+      />
       <Board items={items} />
     </>
   );
