@@ -93,6 +93,18 @@ model Pedido {
   // «Listo para despacho» (sigue siendo el mismo tiempo en bodega).
   llegadaBodegaEn DateTime?
 
+  // Todo lo que se extrae del pedido de Laudus al sincronizarlo queda acá,
+  // aunque hoy no se use en ninguna pantalla — mejor guardarlo ahora que
+  // tener que volver a pedirle la orden a Laudus más adelante. Solo se
+  // llenan en pedidos traídos con sincronizarPedidoLaudus(); en los demás
+  // quedan null.
+  salesOrderIdLaudus   Int?      @unique
+  clienteVATIdLaudus   String?
+  clienteEmailLaudus   String?
+  notasLaudus          String?
+  transportistaLaudus  String? // orden.carrier?.name — sugerencia de Laudus, no reemplaza modoDespacho (que sigue siendo el real/editable)
+  fechaEmisionLaudus   DateTime?
+
   productos Producto[]
 
   creadoEn      DateTime @default(now())
@@ -130,6 +142,14 @@ model Producto {
   // Laudus tendría proveedor 1:1). Sirve para conectar un producto sin
   // stock con la línea de "Por pedir" correcta en Compras.
   proveedor String?
+
+  // De Laudus (solo en líneas traídas con sincronizarPedidoLaudus): itemId
+  // real de la línea en la orden de venta — se necesita para el "traceFrom"
+  // el día que se emitan guías/facturas enlazadas al pedido original. Precio
+  // unitario también se guarda por si se necesita calcular montos reales
+  // (ej. valorDeclarado de Starken) en vez de usar una referencia fija.
+  itemIdLaudus        Int?
+  precioUnitarioLaudus Float?
 }
 
 model OrdenCompra {

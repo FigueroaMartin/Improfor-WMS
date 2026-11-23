@@ -55,6 +55,7 @@ export type LaudusOrden = {
     product: { sku: string; description: string; unitOfMeasure: string };
     itemDescription: string;
     quantity: number;
+    unitPrice: number;
   }>;
 };
 

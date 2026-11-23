@@ -638,6 +638,15 @@ export async function sincronizarPedidoLaudus(
       direccionEntrega,
       comuna,
       telefonoContacto,
+      // Todo lo demás que trae el pedido de Laudus, aunque hoy no se use en
+      // ninguna pantalla — mejor tenerlo guardado que tener que volver a
+      // pedirle la orden a Laudus más adelante.
+      salesOrderIdLaudus: Number(idLimpio),
+      clienteVATIdLaudus: orden.customer.VATId || null,
+      clienteEmailLaudus: orden.customer.email || null,
+      notasLaudus: orden.notes || orden.deliveryNotes || null,
+      transportistaLaudus: orden.carrier?.name || null,
+      fechaEmisionLaudus: orden.issuedDate ? new Date(orden.issuedDate) : null,
       productos: {
         create: items.map((it) => {
           const maestro = maestroPorSku.get(it.product.sku);
@@ -649,6 +658,8 @@ export async function sincronizarPedidoLaudus(
             stock,
             estado: stock >= it.quantity ? "ok" : "falta",
             proveedor: maestro?.proveedor ?? null,
+            itemIdLaudus: it.itemId ?? null,
+            precioUnitarioLaudus: it.unitPrice ?? null,
           };
         }),
       },
