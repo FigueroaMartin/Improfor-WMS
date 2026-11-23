@@ -87,6 +87,7 @@ export default function Topbar({
             ))}
           </nav>
         )}
+        {centro && <div className="sidebar-centro">{centro}</div>}
         <form action={cerrarPerfil} className="sidebar-persona">
           <button type="submit" className="persona-btn" title="Cambiar de perfil">
             <span className="avatar" style={{ background: `var(${colorVar}-tint)`, color: `var(${colorVar})` }}>
@@ -104,7 +105,6 @@ export default function Topbar({
       {!colapsada && <div className="sidebar-overlay" onClick={alternar} />}
       <header className="topbar-contenido">
         <span className="area">{area}</span>
-        {centro && <div className="topbar-centro">{centro}</div>}
       </header>
     </>
   );

@@ -138,6 +138,34 @@ button:disabled{ opacity:.5; cursor:default; filter:none; }
 .sidebar-nav-icono{ font-size: 15px; }
 .sidebar-persona{ margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
 
+/* Sub-tabs de área (ej. "Ingreso de pedidos / Pedidos despachados") dentro
+   de la barra lateral — mismo componente .vista-tabs que antes vivía
+   centrado en la topbar, apilado en vertical acá. */
+.sidebar-centro{
+  margin: 14px 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.sidebar-centro .vista-tabs{
+  flex-direction: column;
+  background: transparent;
+  padding: 0;
+  gap: 2px;
+}
+.sidebar-centro .vista-tabs button{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  width: 100%;
+}
+.sidebar-centro .vista-tabs button:hover{ background: var(--grey-tint); }
+.sidebar-centro .vista-tabs button.active{ background: var(--teal-tint); color: var(--teal); }
+
 /* Barra de contenido (slim) — lo que queda a la derecha de la barra
    lateral: nombre del área activa + sub-tabs de la página (ej. "Ingreso
    de pedidos / Pedidos despachados"). */
