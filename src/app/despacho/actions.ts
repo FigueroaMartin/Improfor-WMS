@@ -703,3 +703,69 @@ export async function sincronizarPedidoLaudus(
   revalidarTodo();
   return { ok: true, pedidoId };
 }
+
+// --- Reingresar un pedido ---------------------------------------------------
+// "Rebobinar" un pedido a cualquier altura del flujo, mandándolo de vuelta a
+// Ingreso para clasificarlo de nuevo desde cero — sin borrarlo (mantiene el
+// mismo ID, el historial completo y todos los datos de Laudus intactos; a
+// diferencia de eliminarPedido(), que es un cierre definitivo con motivo y
+// puede generar NC). Se permite siempre, incluso si ya generó algo aguas
+// abajo (línea en una OC de Compras, factura, abono) — en ese caso se deja
+// un aviso (🗯 Cacho) para que alguien revise esos registros a mano, en vez
+// de bloquear el reingreso.
+export async function reingresarPedido(pedidoId: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId }, include: { productos: true } });
+  if (!pedido) return { ok: false, error: "Pedido no encontrado" };
+  if (pedido.columnaDespacho === "ingreso") return { ok: false, error: "Este pedido ya está en Ingreso." };
+  if (pedido.columnaDespacho === "eliminado") return { ok: false, error: "Este pedido está eliminado — no se puede reingresar." };
+
+  const historialId = await guardarHistorial(pedido, "Reingresado a Ingreso — vuelve a clasificarse desde cero");
+
+  // origenPedido es texto libre (ej. "PED-10432 (5)" o "PED-A + PED-B (3)"),
+  // no una FK — se busca por coincidencia de substring.
+  const ocsAsociadas = await prisma.ordenCompra.findMany({ where: { origenPedido: { contains: pedidoId } } });
+  const tieneAguasAbajo = ocsAsociadas.length > 0 || pedido.facturaNumero != null || pedido.abonoMonto != null;
+
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: {
+      columnaDespacho: "ingreso",
+      nuevo: true,
+      documento: "",
+      modoDespacho: "",
+      situacionCobro: null,
+      facturaAnticipada: false,
+      caratula: null,
+      bultos: null,
+      fotoCapturada: null,
+      fotoDataUrl: null,
+      medidas: null,
+      peso: null,
+      otNumero: null,
+      firmaCapturada: null,
+      numeroGuiaStarken: null,
+      llegadaBodegaEn: null,
+      llegadaPorPrepararEn: null,
+    },
+  });
+
+  if (tieneAguasAbajo) {
+    const detalles = [
+      ocsAsociadas.length > 0 ? `${ocsAsociadas.length} OC de Compras (${ocsAsociadas.map((o) => o.id).join(", ")})` : null,
+      pedido.facturaNumero ? `factura ${pedido.facturaNumero}` : null,
+      pedido.abonoMonto != null ? "abono registrado en Cobranzas" : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    await prisma.cacho.create({
+      data: {
+        area: "despacho",
+        texto: `⚠ ${pedidoId} se reingresó a Ingreso pero tiene algo pendiente aguas abajo: ${detalles} — revisar manualmente.`,
+        pedidoId,
+      },
+    });
+  }
+
+  revalidarTodo();
+  return { ok: true, historialId, aviso: tieneAguasAbajo };
+}

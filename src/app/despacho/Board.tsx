@@ -26,6 +26,7 @@ import {
   moverProductoEntrePedidos,
   solicitarAbono,
   sincronizarPedidoLaudus,
+  reingresarPedido,
 } from "./actions";
 import { obtenerPreferenciasDespacho } from "@/app/clientes/actions";
 import type { HistorialAccion, Cacho, CachoComentario } from "@prisma/client";
@@ -1162,6 +1163,28 @@ export default function Board({
                   }
                 >
                   📦 Marcar entregado (simulado)
+                </button>
+              )}
+              {!["ingreso", "eliminado"].includes(abierto.columnaDespacho) && (
+                <button
+                  className="btn-secundario"
+                  onClick={() => {
+                    if (!confirm(`¿Reingresar ${abierto.id} a Ingreso? Vuelve a clasificarse desde cero (documento, modo de despacho, etc.).`)) return;
+                    reingresarPedido(abierto.id).then((res) => {
+                      if (!res.ok) {
+                        alert(res.error);
+                        return;
+                      }
+                      setAbierto(null);
+                      mostrarToast(
+                        res.aviso ? `${abierto.id}: reingresado — revisa 🗯 Cachos, tenía algo pendiente aguas abajo` : `${abierto.id}: reingresado a Ingreso`,
+                        res.historialId
+                      );
+                      refrescar();
+                    });
+                  }}
+                >
+                  ↩ Reingresar a Ingreso
                 </button>
               )}
               {!["entregado"].includes(abierto.columnaDespacho) && (
