@@ -672,40 +672,6 @@ export default function Board({
               {abierto.cliente} — {abierto.contacto}
             </div>
 
-            {abierto.salesOrderIdLaudus != null && (
-              <div style={{ marginBottom: 14, padding: "10px 12px", background: "var(--grey-tint)", borderRadius: 8, fontSize: 12.5 }}>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--ink-soft)", fontWeight: 700, marginBottom: 4 }}>
-                  Datos de Laudus (orden de venta #{abierto.salesOrderIdLaudus})
-                </div>
-                <div><b>RUT cliente:</b> {abierto.clienteVATIdLaudus || "—"}</div>
-                <div><b>Email cliente:</b> {abierto.clienteEmailLaudus || "—"}</div>
-                <div><b>Transportista sugerido:</b> {abierto.transportistaLaudus || "—"}</div>
-                <div><b>Fecha de emisión:</b> {abierto.fechaEmisionLaudus ? fechaCorta(abierto.fechaEmisionLaudus) : "—"}</div>
-                <div><b>Notas del pedido:</b> {abierto.notasLaudus || "—"}</div>
-                <div style={{ marginTop: 8 }}>
-                  <b>Líneas:</b>
-                  <table className="productos" style={{ marginTop: 4 }}>
-                    <thead>
-                      <tr>
-                        <th>SKU</th>
-                        <th>itemId Laudus</th>
-                        <th>Precio unitario</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {abierto.productos.map((p) => (
-                        <tr key={p.id}>
-                          <td>{p.sku}</td>
-                          <td>{p.itemIdLaudus ?? "—"}</td>
-                          <td>{p.precioUnitarioLaudus != null ? `$ ${Math.round(p.precioUnitarioLaudus).toLocaleString("es-CL")}` : "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
             {abierto.columnaDespacho === "ingreso" ? (
               <div className="row" style={{ background: "var(--teal-tint)", padding: "12px 14px", borderRadius: 10, marginBottom: 14 }}>
                 <div style={{ width: "100%", fontSize: 11, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--teal)", fontWeight: 700, marginBottom: 2 }}>
@@ -848,6 +814,19 @@ export default function Board({
               </div>
             )}
 
+            {abierto.salesOrderIdLaudus != null && (
+              <div style={{ marginBottom: 14, padding: "10px 12px", background: "var(--grey-tint)", borderRadius: 8, fontSize: 12.5 }}>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--ink-soft)", fontWeight: 700, marginBottom: 4 }}>
+                  Datos de Laudus (orden de venta #{abierto.salesOrderIdLaudus})
+                </div>
+                <div><b>RUT cliente:</b> {abierto.clienteVATIdLaudus || "—"}</div>
+                <div><b>Email cliente:</b> {abierto.clienteEmailLaudus || "—"}</div>
+                <div><b>Transportista sugerido:</b> {abierto.transportistaLaudus || "—"}</div>
+                <div><b>Fecha de emisión:</b> {abierto.fechaEmisionLaudus ? fechaCorta(abierto.fechaEmisionLaudus) : "—"}</div>
+                <div><b>Notas del pedido:</b> {abierto.notasLaudus || "—"}</div>
+              </div>
+            )}
+
             <table className="productos">
               <thead>
                 <tr>
@@ -857,6 +836,12 @@ export default function Board({
                   <th>Stock</th>
                   <th>Estado</th>
                   <th>Fecha</th>
+                  {abierto.productos.some((p) => p.itemIdLaudus != null) && (
+                    <>
+                      <th>itemId Laudus</th>
+                      <th>Precio unitario</th>
+                    </>
+                  )}
                   <th></th>
                 </tr>
               </thead>
@@ -869,6 +854,12 @@ export default function Board({
                     <td>{prod.stock}</td>
                     <td>{badgeStock(prod.estado)}</td>
                     <td style={{ fontSize: 11, color: "var(--ink-soft)" }}>{fechaCorta(prod.actualizadoEn)}</td>
+                    {abierto.productos.some((p) => p.itemIdLaudus != null) && (
+                      <>
+                        <td>{prod.itemIdLaudus ?? "—"}</td>
+                        <td>{prod.precioUnitarioLaudus != null ? `$ ${Math.round(prod.precioUnitarioLaudus).toLocaleString("es-CL")}` : "—"}</td>
+                      </>
+                    )}
                     <td>
                       <button
                         className="link-btn"
