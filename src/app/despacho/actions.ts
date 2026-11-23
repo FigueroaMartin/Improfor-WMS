@@ -11,7 +11,8 @@ import { revalidatePath } from "next/cache";
 import { avisarBodega } from "@/lib/avisos";
 import { COLUMNAS_DESPACHO } from "@/lib/dominio";
 import { generarOrdenesDesdePedido } from "@/lib/comprasCascada";
-import { obtenerOrdenVentaLaudus, esLineaFlete } from "@/lib/laudus";
+import { obtenerOrdenVentaLaudus } from "@/lib/laudus";
+import { esLineaFlete } from "@/lib/dominio";
 
 function revalidarTodo() {
   revalidatePath("/despacho");

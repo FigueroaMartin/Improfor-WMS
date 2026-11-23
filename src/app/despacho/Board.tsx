@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { VISTA_DEFAULT } from "./VistaTabs";
-import { COLUMNAS_DESPACHO, MOTIVOS_CANCELACION, MOTIVOS_MOVER_PRODUCTO, TIPOS_DOCUMENTO, MODOS_DESPACHO, type PedidoConProductos } from "@/lib/dominio";
+import { COLUMNAS_DESPACHO, MOTIVOS_CANCELACION, MOTIVOS_MOVER_PRODUCTO, TIPOS_DOCUMENTO, MODOS_DESPACHO, estadoStockPedido, type PedidoConProductos } from "@/lib/dominio";
 import {
   moverPedido,
   eliminarPedido,
@@ -52,6 +52,27 @@ function badgeStock(estado: string) {
   if (estado === "falta") return <span className="badge stock_falta">Falta stock</span>;
   if (estado === "bloqueado") return <span className="badge stock_bloqueado">Bloqueado</span>;
   return <span className="badge stock_ok">Stock OK</span>;
+}
+
+// Barra de progreso de stock del pedido completo (no solo "hay o no hay
+// falta") — mismo cálculo y la misma idea visual que StockBadge del otro
+// proyecto (laudus-pedidos-kanban): cuántas líneas (sin contar Flete) ya
+// tienen stock suficiente.
+function BarraStockPedido({ productos }: { productos: PedidoConProductos["productos"] }) {
+  const { estado, lineasConStock, lineasRelevantes } = estadoStockPedido(productos);
+  if (lineasRelevantes === 0) return null;
+  const pct = Math.round((lineasConStock / lineasRelevantes) * 100);
+  const color = estado === "completo" ? "var(--teal)" : estado === "sin_stock" ? "var(--red)" : "var(--amber)";
+  return (
+    <div style={{ marginTop: 4 }}>
+      <div style={{ height: 4, borderRadius: 2, background: "var(--grey-tint)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2 }} />
+      </div>
+      <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+        {lineasConStock}/{lineasRelevantes} líneas con stock
+      </span>
+    </div>
+  );
 }
 
 function badgeCobro(situacion: string | null) {
@@ -372,6 +393,7 @@ export default function Board({
           {p.facturaAnticipada && <span className="badge factura_anticipada">Fact. anticipada</span>}
           {anyFalta && badgeStock(anyFalta.estado)}
         </div>
+        <BarraStockPedido productos={p.productos} />
       </div>
     );
   }

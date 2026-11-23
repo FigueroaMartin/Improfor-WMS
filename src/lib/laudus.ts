@@ -58,14 +58,6 @@ export type LaudusOrden = {
   }>;
 };
 
-// Las líneas "Flete" son el costo de despacho cobrado como si fuera un
-// producto más — no es mercadería real, así que no debe llegar a Bodega
-// como un ítem para preparar (mismo criterio documentado en el otro
-// proyecto, sync-laudus-ventas).
-export function esLineaFlete(sku: string) {
-  return (sku || "").trim().toLowerCase() === "flete";
-}
-
 export async function obtenerOrdenVentaLaudus(salesOrderId: number): Promise<LaudusOrden> {
   return laudusGet(`/sales/orders/${salesOrderId}`);
 }

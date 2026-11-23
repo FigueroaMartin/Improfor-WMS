@@ -6,6 +6,37 @@ import type { Pedido, Producto } from "@prisma/client";
 
 export type PedidoConProductos = Pedido & { productos: Producto[] };
 
+// Líneas "Flete" son el costo de despacho cobrado dentro del mismo pedido,
+// no un producto real — se excluyen del cálculo de stock (mismo criterio
+// que el otro proyecto de Laudus, sync-laudus-ventas / laudus-pedidos-kanban).
+export function esLineaFlete(sku: string) {
+  return (sku || "").trim().toLowerCase() === "flete";
+}
+
+export type EstadoStockPedido = "pendiente" | "completo" | "sin_stock" | "stock_parcial";
+
+// Réplica del cálculo de "stockStatus" del otro proyecto (laudus-pedidos-kanban):
+// de las líneas que SÍ son producto real, cuenta cuántas tienen stock
+// suficiente (preparado o preparable) vs. cuántas tienen algo de stock.
+export function estadoStockPedido(productos: Pick<Producto, "sku" | "cantidad" | "stock" | "estado">[]): {
+  estado: EstadoStockPedido;
+  lineasConStock: number;
+  lineasRelevantes: number;
+} {
+  const relevantes = productos.filter((p) => !esLineaFlete(p.sku));
+  const total = relevantes.length;
+  const conStockSuficiente = relevantes.filter((p) => p.estado === "ok").length;
+  const conAlgoDeStock = relevantes.filter((p) => p.stock > 0).length;
+
+  let estado: EstadoStockPedido;
+  if (total === 0) estado = "pendiente";
+  else if (conStockSuficiente === total) estado = "completo";
+  else if (conAlgoDeStock === 0) estado = "sin_stock";
+  else estado = "stock_parcial";
+
+  return { estado, lineasConStock: conStockSuficiente, lineasRelevantes: total };
+}
+
 // "Pendiente" y "Pendiente de pago" se quitaron del tablero de Luisana
 // (ya no son columnas que ella gestione a la vista) — pero siguen
 // existiendo como ESTADO del pedido: "Pendiente de pago" lo sigue poniendo
