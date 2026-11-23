@@ -43,7 +43,7 @@ async function laudusGet(path: string) {
 
 export type LaudusOrden = {
   salesOrderId: number;
-  customer: { name: string; legalName: string; VATId: string; email: string };
+  customer: { customerId: number; name: string; legalName: string; VATId: string; email: string };
   contact: { firstName?: string; lastName?: string } | null;
   carrier: { name: string } | null;
   deliveryAddress: { address: string; city: string; county: string } | null;
@@ -58,6 +58,26 @@ export type LaudusOrden = {
   }>;
 };
 
+export type LaudusCliente = {
+  customerId: number;
+  address: string;
+  city: string;
+  county: string;
+  addressBilling: string;
+  cityBilling: string;
+  countyBilling: string;
+  phone1: string;
+};
+
 export async function obtenerOrdenVentaLaudus(salesOrderId: number): Promise<LaudusOrden> {
   return laudusGet(`/sales/orders/${salesOrderId}`);
+}
+
+// Pedidos de e-commerce (WooCommerce) llegan con deliveryAddress vacío —
+// la dirección de envío nunca se sincronizó a ese campo de la orden en
+// Laudus (confirmado contra datos reales: todo pedido con source
+// "WooCommerce" trae deliveryAddress null). Ahí se usa la ficha del
+// cliente como respaldo.
+export async function obtenerClienteLaudus(customerId: number): Promise<LaudusCliente> {
+  return laudusGet(`/sales/customers/${customerId}`);
 }

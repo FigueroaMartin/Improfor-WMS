@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { avisarBodega } from "@/lib/avisos";
 import { COLUMNAS_DESPACHO } from "@/lib/dominio";
 import { generarOrdenesDesdePedido } from "@/lib/comprasCascada";
-import { obtenerOrdenVentaLaudus } from "@/lib/laudus";
+import { obtenerOrdenVentaLaudus, obtenerClienteLaudus } from "@/lib/laudus";
 import { esLineaFlete } from "@/lib/dominio";
 
 function revalidarTodo() {
@@ -592,6 +592,29 @@ export async function sincronizarPedidoLaudus(
 
   const contacto = orden.contact ? `${orden.contact.firstName ?? ""} ${orden.contact.lastName ?? ""}`.trim() : "";
 
+  // Pedidos de e-commerce (WooCommerce) llegan sin deliveryAddress a nivel
+  // de la orden (confirmado con datos reales de Laudus) — ahí se cae a la
+  // ficha del cliente como respaldo, en vez de dejarlo en blanco para que
+  // Bodega lo complete a mano.
+  let direccionEntrega = orden.deliveryAddress?.address ?? "";
+  let comuna = orden.deliveryAddress?.county ?? "";
+  let telefonoContacto = "";
+  if (!direccionEntrega) {
+    try {
+      const fichaCliente = await obtenerClienteLaudus(orden.customer.customerId);
+      // Algunos clientes solo tienen cargada la dirección de despacho
+      // (address/county), otros solo la de facturación
+      // (addressBilling/countyBilling) — se prueba una y si está vacía se
+      // cae a la otra.
+      direccionEntrega = fichaCliente.address || fichaCliente.addressBilling || "";
+      comuna = fichaCliente.county || fichaCliente.countyBilling || "";
+      telefonoContacto = fichaCliente.phone1 ?? "";
+    } catch {
+      // Si falla la ficha del cliente, se sigue dejando en blanco — Bodega
+      // lo completa a mano como respaldo (igual que hoy).
+    }
+  }
+
   const creado = await prisma.pedido.create({
     data: {
       id: pedidoId,
@@ -602,9 +625,9 @@ export async function sincronizarPedidoLaudus(
       documento: cliente?.documentoPreferido ?? "",
       modoDespacho: cliente?.modoDespachoPreferido ?? "",
       nuevo: true,
-      direccionEntrega: orden.deliveryAddress?.address ?? "",
-      comuna: orden.deliveryAddress?.county ?? "",
-      telefonoContacto: "",
+      direccionEntrega,
+      comuna,
+      telefonoContacto,
       productos: {
         create: items.map((it) => {
           const maestro = maestroPorSku.get(it.product.sku);
