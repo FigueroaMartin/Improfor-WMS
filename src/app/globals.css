@@ -63,70 +63,135 @@ button:disabled{ opacity:.5; cursor:default; filter:none; }
 
 .btn-peligro{ background: var(--red); }
 
-/* Barra superior */
-header.topbar{
+/* Barra lateral (reemplaza la barra superior horizontal de Fase 1) —
+   colapsable y recordada en localStorage del dispositivo. En escritorio
+   empuja el contenido (margin-left en body); en celular flota por encima
+   como un drawer, con overlay para cerrarla tocando afuera. */
+.sidebar{
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 212px;
+  background:#fff;
+  border-right: 1px solid var(--line);
+  display:flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  z-index: 40;
+  transition: transform .18s ease;
+  overflow-y: auto;
+}
+.sidebar.colapsada{ transform: translateX(-100%); }
+.sidebar-header{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.sidebar-header h1{
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight:700;
+}
+.sidebar-toggle, .sidebar-reabrir{
+  background: var(--grey-tint);
+  color: var(--ink-soft);
+  border: none;
+  border-radius: 8px;
+  width: 28px; height: 28px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  display:flex; align-items:center; justify-content:center;
+}
+.sidebar-toggle:hover, .sidebar-reabrir:hover{ background: var(--line); filter:none; }
+.sidebar-reabrir{
+  position: fixed;
+  top: 44px; left: 10px;
+  z-index: 41;
+}
+.sidebar-overlay{
+  display:none;
+}
+.sidebar-nav{
+  display:flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+}
+.sidebar-nav a{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight:600;
+  color: var(--ink-soft);
+  text-decoration:none;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.sidebar-nav a.active{
+  color: var(--teal);
+  background: var(--teal-tint);
+}
+.sidebar-nav a:hover{ color: var(--ink); background: var(--grey-tint); }
+.sidebar-nav a.active:hover{ color: var(--teal); background: var(--teal-tint); }
+.sidebar-nav-icono{ font-size: 15px; }
+.sidebar-persona{ margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* Barra de contenido (slim) — lo que queda a la derecha de la barra
+   lateral: nombre del área activa + sub-tabs de la página (ej. "Ingreso
+   de pedidos / Pedidos despachados"). */
+.topbar-contenido{
+  display:flex;
+  align-items:center;
+  justify-content:center;
   gap: 8px;
   padding: 14px 22px;
   background:#fff;
   border-bottom:1px solid var(--line);
+  margin-left: 212px;
+  transition: margin-left .18s ease;
 }
-header.topbar .brand{
+html.sidebar-colapsada .topbar-contenido{ margin-left: 0; padding-left: 50px; }
+html.sidebar-colapsada .topbar-contenido .area{ left: 50px; }
+.topbar-contenido .area{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  position: absolute;
+  left: 22px;
+}
+.topbar-centro{
+  flex: 1 1 auto;
   display:flex;
-  align-items:baseline;
-  flex-wrap: wrap;
-  gap:10px;
+  justify-content:center;
 }
+body{ margin-left: 212px; transition: margin-left .18s ease; }
+html.sidebar-colapsada body{ margin-left: 0; }
+
 @media (max-width: 720px){
-  header.topbar{ padding: 10px 14px; }
-  .area-nav{
-    width: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-    gap: 16px;
-    -webkit-overflow-scrolling: touch;
+  body{ margin-left: 0 !important; }
+  .topbar-contenido{ margin-left: 0; padding: 10px 14px 10px 50px; }
+  .topbar-contenido .area{ left: 50px; }
+  .sidebar{
+    transform: translateX(-100%);
+    box-shadow: 0 0 24px rgba(0,0,0,.15);
   }
-  .area-nav a{ white-space: nowrap; }
+  .sidebar:not(.colapsada){ transform: translateX(0); }
+  .sidebar-overlay{
+    display:block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.25);
+    z-index: 39;
+  }
+  .sidebar-reabrir{ top: 10px; }
 
   /* iOS hace zoom automático al enfocar un input con font-size < 16px —
      Robinson y Bodega escriben casi todo desde el celular. */
   .motivo-select, .motivo-textarea{ font-size: 16px; }
 }
-header.topbar h1{
-  font-family: var(--font-title);
-  font-size: 19px;
-  margin:0;
-  font-weight:700;
-}
-header.topbar .area{
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-.area-nav{
-  display:flex;
-  gap: 14px;
-  margin-left: 18px;
-}
-.area-nav a{
-  font-size: 12.5px;
-  font-weight:600;
-  color: var(--ink-soft);
-  text-decoration:none;
-  padding: 3px 0;
-  border-bottom: 2px solid transparent;
-}
-.area-nav a.active{
-  color: var(--teal);
-  border-bottom-color: var(--teal);
-}
-.area-nav a:hover{ color: var(--ink); }
-.topbar-centro{
-  flex: 1 1 auto;
-  display:flex;
-  justify-content:center;
+@media (max-width: 720px){
+  .topbar-centro{ width: 100%; }
 }
 .vista-tabs{
   display:flex;
