@@ -162,13 +162,20 @@ export async function moverPedido(pedidoId: string, columnaDestino: string) {
   const nombreCol = COLUMNAS_DESPACHO.find((c) => c.id === columnaDestino)?.nombre ?? columnaDestino;
   const historialId = await guardarHistorial(antes, `Movido a «${nombreCol}»`);
 
+  // Recién entra al radar de Bodega (Luisana lo mandó a preparar) — arranca
+  // el timer de "lleva X esperando" que se muestra en sus tarjetas.
+  const entraABodegaRecien = !["salida_bodega", "despacho"].includes(antes.columnaDespacho) && ["salida_bodega", "despacho"].includes(columnaDestino);
+
   await prisma.pedido.update({
     where: { id: pedidoId },
-    data: { columnaDespacho: columnaDestino, nuevo: false },
+    data: {
+      columnaDespacho: columnaDestino,
+      nuevo: false,
+      ...(entraABodegaRecien ? { llegadaBodegaEn: new Date() } : {}),
+    },
   });
 
-  // Recién entra al radar de Bodega (Luisana lo mandó a preparar).
-  if (!["salida_bodega", "despacho"].includes(antes.columnaDespacho) && ["salida_bodega", "despacho"].includes(columnaDestino)) {
+  if (entraABodegaRecien) {
     await avisarBodega(`Nuevo pedido para preparar: ${pedidoId}`, pedidoId);
   }
 
@@ -290,6 +297,8 @@ export async function clasificarIngreso(
     `Ingreso clasificado → «${nombreCol}» (${datos.documento}, ${datos.modoDespacho})`
   );
 
+  const entraABodega = ["salida_bodega", "despacho"].includes(datos.columnaDestino);
+
   await prisma.pedido.update({
     where: { id: pedidoId },
     data: {
@@ -300,10 +309,11 @@ export async function clasificarIngreso(
       facturaAnticipada: datos.facturaAnticipada ?? false,
       nuevo: false,
       ...(esSendu ? { numeroGuiaStarken: datos.otSendu!.trim() } : {}),
+      ...(entraABodega ? { llegadaBodegaEn: new Date() } : {}),
     },
   });
 
-  if (["salida_bodega", "despacho"].includes(datos.columnaDestino)) {
+  if (entraABodega) {
     await avisarBodega(`Nuevo pedido para preparar: ${pedidoId}`, pedidoId);
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { COLUMNAS_BODEGA, LINEAS_LISTO_DESPACHO, lineaTransportista, filaRetenidoPago, type PedidoConProductos } from "@/lib/dominio";
+import { COLUMNAS_BODEGA, LINEAS_LISTO_DESPACHO, lineaTransportista, filaRetenidoPago, tiempoEsperandoBodega, type PedidoConProductos } from "@/lib/dominio";
 import { VISTA_DEFAULT } from "./VistaTabs";
 import { moverSalida, deshacerAccion, deshacerVarios, actualizarPreparado } from "./actions";
 import CierreDespacho from "./CierreDespacho";
@@ -49,6 +49,14 @@ export default function Board({
   const [dragId, setDragId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ mensaje: string; historialIds: number[] } | null>(null);
   const [resaltados, setResaltados] = useState<Set<string>>(new Set());
+
+  // Tick para que el timer "lleva X esperando" de las tarjetas se actualice
+  // solo, sin esperar a un refresh del servidor.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Cuando refrescar() trae items nuevos del servidor, sincroniza la
   // tarjeta abierta (si sigue abierta) con los datos frescos — así la
@@ -131,6 +139,15 @@ export default function Board({
         )}
         <div className="id">{p.id}</div>
         <div className="cliente">{p.cliente}</div>
+        {p.llegadaBodegaEn && col.id !== "despachado" && (() => {
+          const { texto, urgencia } = tiempoEsperandoBodega(p.llegadaBodegaEn);
+          const color = urgencia === "urgente" ? "var(--red)" : urgencia === "atencion" ? "var(--amber)" : "var(--ink-soft)";
+          return (
+            <div style={{ fontSize: 11, color, marginTop: 2 }} title="Tiempo esperando en Bodega">
+              ⏱ lleva {texto}
+            </div>
+          );
+        })()}
         <div className="meta">
           <span className="badge ok">{p.modoDespacho}</span>
           {col.id === "salida_bodega" ? (
@@ -146,6 +163,15 @@ export default function Board({
             <span className="badge stock_ok">Completo</span>
           )}
         </div>
+        {col.id === "salida_bodega" && (
+          <button
+            className="link-btn"
+            style={{ marginTop: 6, alignSelf: "flex-start" }}
+            onClick={(e) => { e.stopPropagation(); setAbierto(p); setCerrando(false); }}
+          >
+            ℹ️ Más información
+          </button>
+        )}
       </div>
     );
   }
@@ -393,6 +419,49 @@ export default function Board({
                   {abierto.cliente} — vendedor {abierto.vendedor} · {abierto.modoDespacho}
                 </div>
 
+                {abierto.columnaBodega === "salida_bodega" ? (
+                  (() => {
+                    const separados = abierto.productos.filter((x) => x.estado !== "falta");
+                    const enImportacion = abierto.productos.filter((x) => x.estado === "falta");
+                    const grupos: { titulo: string; items: typeof abierto.productos }[] = [
+                      { titulo: "✅ Separado (disponible para despachar)", items: separados },
+                      { titulo: "⏳ En importación (todavía no llega)", items: enImportacion },
+                    ];
+                    return (
+                      <>
+                        {grupos.map((g) => (
+                          <div key={g.titulo} style={{ marginTop: 14 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", textTransform: "uppercase", marginBottom: 6 }}>
+                              {g.titulo} ({g.items.length})
+                            </div>
+                            {g.items.length === 0 ? (
+                              <p className="recordatorios-vacio" style={{ margin: 0 }}>Ninguno.</p>
+                            ) : (
+                              <table className="productos">
+                                <thead>
+                                  <tr>
+                                    <th>SKU</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {g.items.map((prod) => (
+                                    <tr key={prod.id}>
+                                      <td>{prod.sku}</td>
+                                      <td>{prod.nombre}</td>
+                                      <td>{prod.cantidad}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    );
+                  })()
+                ) : (
                 <table className="productos">
                   <thead>
                     <tr>
@@ -460,6 +529,7 @@ export default function Board({
                     )}
                   </tbody>
                 </table>
+                )}
 
                 {abierto.fotoDataUrl && (
                   <div className="field" style={{ marginTop: 14 }}>

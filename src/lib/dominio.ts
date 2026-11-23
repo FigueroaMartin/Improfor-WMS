@@ -37,6 +37,26 @@ export function estadoStockPedido(productos: Pick<Producto, "sku" | "cantidad" |
   return { estado, lineasConStock: conStockSuficiente, lineasRelevantes: total };
 }
 
+// Timer "lleva X esperando" de Bodega (apuntes sueltos) — umbrales a ojo:
+// recién llegado hasta 4h es normal, 4-12h amarillo, más de 12h rojo (algo
+// se está demorando). Se puede afinar después con datos reales de uso.
+export type UrgenciaEspera = "normal" | "atencion" | "urgente";
+
+export function tiempoEsperandoBodega(desde: Date | string): { texto: string; urgencia: UrgenciaEspera } {
+  const ms = Date.now() - new Date(desde).getTime();
+  const minutos = Math.max(0, Math.floor(ms / 60000));
+  const horas = Math.floor(minutos / 60);
+  const dias = Math.floor(horas / 24);
+
+  let texto: string;
+  if (dias >= 1) texto = `${dias}d ${horas % 24}h`;
+  else if (horas >= 1) texto = `${horas}h ${minutos % 60}m`;
+  else texto = `${minutos}m`;
+
+  const urgencia: UrgenciaEspera = horas >= 12 ? "urgente" : horas >= 4 ? "atencion" : "normal";
+  return { texto, urgencia };
+}
+
 // "Pendiente" y "Pendiente de pago" se quitaron del tablero de Luisana
 // (ya no son columnas que ella gestione a la vista) — pero siguen
 // existiendo como ESTADO del pedido: "Pendiente de pago" lo sigue poniendo

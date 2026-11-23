@@ -86,6 +86,13 @@ model Pedido {
   fotoEntregaRobinson        String?
   comentarioEntregaRobinson String?
 
+  // Timer de Bodega (§ apuntes sueltos) — momento en que el pedido entró al
+  // radar de Bodega (clasificado a "Salida de bodega" o "Despacho" desde
+  // Ingreso, o devuelto desde "Por pedir"). Sirve para mostrar "lleva X
+  // esperando" en las tarjetas — no se toca al volver a «Por preparar» desde
+  // «Listo para despacho» (sigue siendo el mismo tiempo en bodega).
+  llegadaBodegaEn DateTime?
+
   productos Producto[]
 
   creadoEn      DateTime @default(now())
