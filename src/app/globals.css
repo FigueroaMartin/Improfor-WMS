@@ -116,7 +116,6 @@ button:disabled{ opacity:.5; cursor:default; filter:none; }
   display:flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1 1 auto;
 }
 .sidebar-nav a{
   display:flex;
