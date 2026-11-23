@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { COLUMNAS_BODEGA, LINEAS_LISTO_DESPACHO, lineaTransportista, filaRetenidoPago, tiempoEsperandoBodega, type PedidoConProductos } from "@/lib/dominio";
-import { VISTA_DEFAULT } from "./VistaTabs";
+import { VISTA_DEFAULT, COLUMNAS_POR_VISTA } from "./VistaTabs";
 import { moverSalida, deshacerAccion, deshacerVarios, actualizarPreparado } from "./actions";
 import CierreDespacho from "./CierreDespacho";
 import DespacharLinea from "./DespacharLinea";
@@ -33,6 +33,7 @@ export default function Board({
 }) {
   const router = useRouter();
   const vista = useSearchParams().get("vista") || VISTA_DEFAULT;
+  const columnasVista = COLUMNAS_POR_VISTA[vista] ?? COLUMNAS_POR_VISTA[VISTA_DEFAULT];
   const [, startTransition] = useTransition();
   const [abierto, setAbierto] = useState<Item | null>(null);
   // Filtros de la vista "Despachado" — búsqueda libre (ID o cliente) + por
@@ -44,6 +45,12 @@ export default function Board({
   // Solo importa en celular (ver .tabs-columnas en globals.css) — en
   // escritorio todas las columnas se ven igual, una al lado de la otra.
   const [tabMovil, setTabMovil] = useState<string>(COLUMNAS_BODEGA[0].id);
+  // Si cambia de vista (ej. "Por preparar" → "Listo para despacho") y la
+  // pestaña móvil activa ya no existe en la nueva vista, salta a la primera
+  // columna que sí esté disponible.
+  useEffect(() => {
+    if (!columnasVista.includes(tabMovil)) setTabMovil(columnasVista[0]);
+  }, [vista]);
   const dragIdRef = useRef<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -249,7 +256,7 @@ export default function Board({
       ) : (
       <>
       <div className="tabs-columnas">
-        {COLUMNAS_BODEGA.filter((col) => col.id !== "despachado").map((col) => (
+        {COLUMNAS_BODEGA.filter((col) => columnasVista.includes(col.id)).map((col) => (
           <button
             key={col.id}
             className={"tab-columna" + (tabMovil === col.id ? " active" : "")}
@@ -264,7 +271,7 @@ export default function Board({
       </div>
 
       <main className="board">
-        {COLUMNAS_BODEGA.filter((col) => col.id !== "despachado").map((col) => {
+        {COLUMNAS_BODEGA.filter((col) => columnasVista.includes(col.id)).map((col) => {
           const colItems = items.filter((p) => p.columnaBodega === col.id);
           const columnaGrande = col.id === "por_preparar" || col.id === "listo_despacho";
           return (
@@ -475,6 +482,12 @@ export default function Board({
                       <th>Producto</th>
                       <th>Pedido</th>
                       <th>Preparado</th>
+                      {abierto.columnaBodega === "por_preparar" && abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                        <>
+                          <th>Precio unit.</th>
+                          <th>Subtotal</th>
+                        </>
+                      )}
                       {abierto.columnaBodega === "por_preparar" && <th></th>}
                     </tr>
                   </thead>
@@ -507,6 +520,12 @@ export default function Board({
                               }}
                             />
                           </td>
+                          {abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                            <>
+                              <td>{prod.precioUnitarioLaudus != null ? `$ ${Math.round(prod.precioUnitarioLaudus).toLocaleString("es-CL")}` : "—"}</td>
+                              <td>{prod.precioUnitarioLaudus != null ? `$ ${Math.round(prod.precioUnitarioLaudus * prod.cantidad).toLocaleString("es-CL")}` : "—"}</td>
+                            </>
+                          )}
                           <td>
                             <button
                               className="link-btn"
@@ -535,6 +554,14 @@ export default function Board({
                     )}
                   </tbody>
                 </table>
+                )}
+                {abierto.columnaBodega === "por_preparar" && abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                  <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>
+                    Total: ${" "}
+                    {Math.round(
+                      abierto.productos.reduce((acc, p) => acc + (p.precioUnitarioLaudus ?? 0) * p.cantidad, 0)
+                    ).toLocaleString("es-CL")}
+                  </div>
                 )}
 
                 {abierto.fotoDataUrl && (

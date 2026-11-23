@@ -10,6 +10,7 @@ import { calcColumnaBodega, type PedidoConProductos } from "@/lib/dominio";
 import { revalidatePath } from "next/cache";
 import { avisarBodega, avisarRobinson } from "@/lib/avisos";
 import { crearOrdenFlete, obtenerEtiquetaPdfBase64 } from "@/lib/starken";
+import { puedeGenerarDocumentoTributario, generarDocumentoTributario, type DocumentoTributario } from "@/lib/documentoTributario";
 
 function revalidarTodo() {
   revalidatePath("/despacho");
@@ -397,6 +398,15 @@ export async function cerrarDespacho(pedidoId: string, datos: DatosCierre) {
 
   const historialId = await guardarHistorial(pedido, "Cierre de despacho registrado");
 
+  // Documento tributario del despacho (§ apuntes sueltos) — solo si el
+  // pedido vino de Laudus (hay precio real por línea). Todavía no se emite
+  // nada de verdad en Laudus: genera un placeholder, salvo que sea factura
+  // anticipada, caso en el que se enlaza la que Cobranzas ya emitió.
+  let documentoTributario: DocumentoTributario | null = null;
+  if (puedeGenerarDocumentoTributario(pedido, pedido.productos)) {
+    documentoTributario = generarDocumentoTributario(pedido, pedido.productos);
+  }
+
   // El cierre NO despacha todavía — deja el pedido en "listo_retiro" (real,
   // compartida con Luisana como "Listo para retiro" — calcColumnaBodega la
   // muestra acá como "Listo para despacho"). Despachar es un paso aparte,
@@ -417,6 +427,7 @@ export async function cerrarDespacho(pedidoId: string, datos: DatosCierre) {
       comuna: datos.comuna ?? null,
       telefonoContacto: datos.telefonoContacto ?? null,
       numeroGuiaStarken: datos.numeroGuiaStarken ?? null,
+      ...(documentoTributario ? { documentoTributario: JSON.stringify(documentoTributario) } : {}),
     },
   });
   if (cortos.length > 0 && datos.motivoIncompleto) {
@@ -432,7 +443,7 @@ export async function cerrarDespacho(pedidoId: string, datos: DatosCierre) {
   }
 
   revalidarTodo();
-  return { ok: true, historialId };
+  return { ok: true, historialId, documentoTributario };
 }
 
 // Retiro por transportista (§5g.2, modelo tipo Robinson para TODOS los

@@ -109,6 +109,15 @@ model Pedido {
   transportistaLaudus  String? // orden.carrier?.name — sugerencia de Laudus, no reemplaza modoDespacho (que sigue siendo el real/editable)
   fechaEmisionLaudus   DateTime?
 
+  // Documento tributario del despacho (§ apuntes sueltos) — se genera al
+  // cerrar el despacho en Bodega ("Preparar y cerrar despacho"), solo para
+  // pedidos que vienen de Laudus (con precios por línea). JSON con
+  // { tipo, folio, monto, lineas, emitidoEn, reutilizada, placeholder }.
+  // placeholder=true mientras no se conecte a la emisión real en Laudus;
+  // reutilizada=true cuando es una factura anticipada ya emitida por
+  // Cobranzas (no se genera una nueva, se enlaza la existente).
+  documentoTributario String?
+
   productos Producto[]
 
   creadoEn      DateTime @default(now())

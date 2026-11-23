@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { cerrarDespacho, generarEtiquetaStarken, type DatosCierre } from "./actions";
 import { MOTIVOS_DESPACHO_INCOMPLETO } from "@/lib/dominio";
 import { imprimirCaratulas } from "@/lib/caratula";
+import { imprimirDocumentoTributario } from "@/lib/documentoTributario";
 
 // Achica la foto antes de guardarla (una foto de celular puede pesar varios
 // MB; para el bulto basta con ~1000px de ancho). Devuelve un dataURL JPEG.
@@ -248,6 +249,9 @@ export default function CierreDespacho({
         telefonoContacto: telefonoContacto || undefined,
         oc,
       });
+    }
+    if (res.documentoTributario) {
+      imprimirDocumentoTributario(res.documentoTributario, cliente);
     }
     onCerrado(res.historialId);
   }

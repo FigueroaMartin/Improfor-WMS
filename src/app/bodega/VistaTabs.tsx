@@ -3,11 +3,17 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Mismo patrón que Despacho (VistaTabs) — separa el tablero operativo
-// (Por preparar → ... → Listo para despacho) de una vista aparte, de solo
-// lectura, para lo ya despachado (con filtros y a todo el ancho de
-// pantalla, para revisar con calma el orden de lo que salió).
+// Mismo patrón que Despacho (VistaTabs) — 3 vistas: el tablero de
+// preparación (Por preparar / Salida de bodega / Pendiente de pago),
+// "Listo para despacho" separado (es su propio momento — esperando que
+// pase el transportista, no se está preparando nada ahí), y una vista
+// aparte de solo lectura para lo ya despachado.
 export const VISTA_DEFAULT = "activo" as const;
+
+export const COLUMNAS_POR_VISTA: Record<string, readonly string[]> = {
+  activo: ["por_preparar", "salida_bodega", "retenido_pendiente"],
+  listo: ["listo_despacho"],
+};
 
 export default function VistaTabs() {
   const router = useRouter();
@@ -34,7 +40,11 @@ export default function VistaTabs() {
     <div className="vista-tabs">
       <button type="button" className={vista === "activo" ? "active" : ""} onClick={() => ir("activo")} disabled={isPending}>
         {isPending && yendoA === "activo" && <span className="spinner spinner-sm" />}
-        Por preparar → Listo para despacho
+        Por preparar
+      </button>
+      <button type="button" className={vista === "listo" ? "active" : ""} onClick={() => ir("listo")} disabled={isPending}>
+        {isPending && yendoA === "listo" && <span className="spinner spinner-sm" />}
+        Listo para despacho
       </button>
       <button type="button" className={vista === "despachados" ? "active" : ""} onClick={() => ir("despachados")} disabled={isPending}>
         {isPending && yendoA === "despachados" && <span className="spinner spinner-sm" />}
