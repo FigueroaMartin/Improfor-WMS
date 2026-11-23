@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { VISTA_DEFAULT } from "./VistaTabs";
 import { LOTES_COMPRAS, COLUMNAS_COMPRAS, MODALIDADES_PAGO_PROVEEDOR, TIPOS_TRANSPORTISTA, RUTAS_PROVEEDOR, MOTIVOS_POSPONER_COMPRA } from "@/lib/dominio";
 import {
   moverOrden,
@@ -84,6 +85,14 @@ const ORDENES_POR_PEDIR = ["Proveedor A-Z", "Más atrasado", "Mayor monto", "Má
 
 export default function Board({ ordenes }: { ordenes: OrdenCompra[] }) {
   const router = useRouter();
+  const vista = useSearchParams().get("vista") || VISTA_DEFAULT;
+  // 4 lotes agrupados en 3 vistas — Miami y Ruta a Chile comparten "En
+  // tránsito" porque son el mismo tipo de seguimiento internacional.
+  const lotesVisibles = LOTES_COMPRAS.filter((_, i) => {
+    if (vista === "gestion") return i === 0;
+    if (vista === "cierre") return i === 3;
+    return i === 1 || i === 2; // "transito"
+  });
   const [, startTransition] = useTransition();
   const [abierto, setAbierto] = useState<OrdenCompra | null>(null);
   const dragIdRef = useRef<string | null>(null);
@@ -346,7 +355,7 @@ export default function Board({ ordenes }: { ordenes: OrdenCompra[] }) {
         <button className="link-btn" onClick={() => setPanelTransportistas(true)}>🚚 Transportistas</button>
       </div>
       <main className="board board-lotes">
-        {LOTES_COMPRAS.map((lote) => (
+        {lotesVisibles.map((lote) => (
           <div key={lote.nombre} className="lote">
             <div className="lote-head">{lote.nombre}</div>
             <div className="lote-cols">
