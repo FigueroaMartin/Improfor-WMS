@@ -141,9 +141,8 @@ button:disabled{ opacity:.5; cursor:default; filter:none; }
    de la barra lateral — mismo componente .vista-tabs que antes vivía
    centrado en la topbar, apilado en vertical acá. */
 .sidebar-centro{
-  margin: 14px 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  margin: 2px 0 6px;
+  padding-left: 10px;
 }
 .sidebar-centro .vista-tabs{
   flex-direction: column;

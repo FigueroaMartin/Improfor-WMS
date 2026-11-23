@@ -74,20 +74,23 @@ export default function Topbar({
         </div>
         {areasVisibles.length > 1 && (
           <nav className="sidebar-nav">
-            {areasVisibles.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className={pathname.startsWith(a.href) ? "active" : ""}
-                title={a.label}
-              >
-                <span className="sidebar-nav-icono">{a.icono}</span>
-                <span className="sidebar-nav-label">{a.label}</span>
-              </Link>
-            ))}
+            {areasVisibles.map((a) => {
+              const esActiva = pathname.startsWith(a.href);
+              return (
+                <div key={a.href}>
+                  <Link href={a.href} className={esActiva ? "active" : ""} title={a.label}>
+                    <span className="sidebar-nav-icono">{a.icono}</span>
+                    <span className="sidebar-nav-label">{a.label}</span>
+                  </Link>
+                  {esActiva && centro && <div className="sidebar-centro">{centro}</div>}
+                </div>
+              );
+            })}
           </nav>
         )}
-        {centro && <div className="sidebar-centro">{centro}</div>}
+        {/* Si el perfil solo ve una área (no hay nav de arriba), los
+            sub-tabs igual se muestran, pegados bajo el logo. */}
+        {areasVisibles.length <= 1 && centro && <div className="sidebar-centro">{centro}</div>}
         <form action={cerrarPerfil} className="sidebar-persona">
           <button type="submit" className="persona-btn" title="Cambiar de perfil">
             <span className="avatar" style={{ background: `var(${colorVar}-tint)`, color: `var(${colorVar})` }}>
