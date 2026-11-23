@@ -191,8 +191,11 @@ html.sidebar-colapsada .topbar-contenido .area{ left: 50px; }
   display:flex;
   justify-content:center;
 }
-body{ margin-left: 212px; transition: margin-left .18s ease; }
-html.sidebar-colapsada body{ margin-left: 0; }
+/* El corrimiento solo aplica en páginas con barra lateral (Topbar la marca
+   con esta clase en <html> al montar) — sin ella (ej. el selector de
+   perfil "/") el body queda centrado normal, sin hueco a la izquierda. */
+html.con-sidebar body{ margin-left: 212px; transition: margin-left .18s ease; }
+html.con-sidebar.sidebar-colapsada body{ margin-left: 0; }
 
 @media (max-width: 720px){
   body{ margin-left: 0 !important; }

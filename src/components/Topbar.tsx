@@ -44,6 +44,10 @@ export default function Topbar({
   // dispositivo/navegador, no por usuario) una vez que la persona la oculta.
   const [colapsada, setColapsada] = useState(false);
   useEffect(() => {
+    // Marca <html> mientras esta página tenga barra lateral — el CSS solo
+    // corre el contenido (margin-left del body) cuando existe esta clase,
+    // para no desplazar páginas sin Topbar (ej. el selector de perfil).
+    document.documentElement.classList.add("con-sidebar");
     const guardado = localStorage.getItem(COOKIE_COLAPSADA);
     // Sin preferencia guardada: en celular arranca cerrada (es un drawer que
     // taparía toda la pantalla si abriera solo); en escritorio, abierta.
@@ -52,6 +56,9 @@ export default function Topbar({
       setColapsada(true);
       document.documentElement.classList.add("sidebar-colapsada");
     }
+    return () => {
+      document.documentElement.classList.remove("con-sidebar");
+    };
   }, []);
   function alternar() {
     setColapsada((v) => {
