@@ -397,7 +397,9 @@ export default function Board({
       </>
       )}
 
-      {abierto && (
+      {abierto && (() => {
+        const tienePrecios = abierto.columnaBodega === "por_preparar" && abierto.productos.some((p) => p.precioUnitarioLaudus != null);
+        return (
         <div className="overlay" onClick={(e) => e.target === e.currentTarget && setAbierto(null)}>
           <div className="detalle">
             <button className="close-x" onClick={() => setAbierto(null)}>
@@ -482,7 +484,7 @@ export default function Board({
                       <th>Producto</th>
                       <th>Pedido</th>
                       <th>Preparado</th>
-                      {abierto.columnaBodega === "por_preparar" && abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                      {tienePrecios && (
                         <>
                           <th>Precio unit.</th>
                           <th>Subtotal</th>
@@ -520,7 +522,7 @@ export default function Board({
                               }}
                             />
                           </td>
-                          {abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                          {tienePrecios && (
                             <>
                               <td>{prod.precioUnitarioLaudus != null ? `$ ${Math.round(prod.precioUnitarioLaudus).toLocaleString("es-CL")}` : "—"}</td>
                               <td>{prod.precioUnitarioLaudus != null ? `$ ${Math.round(prod.precioUnitarioLaudus * prod.cantidad).toLocaleString("es-CL")}` : "—"}</td>
@@ -555,7 +557,7 @@ export default function Board({
                   </tbody>
                 </table>
                 )}
-                {abierto.columnaBodega === "por_preparar" && abierto.productos.some((p) => p.precioUnitarioLaudus != null) && (
+                {tienePrecios && (
                   <div style={{ textAlign: "right", fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>
                     Total: ${" "}
                     {Math.round(
@@ -633,7 +635,8 @@ export default function Board({
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {lineaADespachar && (
         <DespacharLinea

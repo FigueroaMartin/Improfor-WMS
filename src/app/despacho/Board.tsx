@@ -1165,7 +1165,7 @@ export default function Board({
                   📦 Marcar entregado (simulado)
                 </button>
               )}
-              {!["ingreso", "eliminado"].includes(abierto.columnaDespacho) && (
+              {!["ingreso", "eliminado", "entregado", "en_transito", "listo_retiro"].includes(abierto.columnaDespacho) && (
                 <button
                   className="btn-secundario"
                   onClick={() => {

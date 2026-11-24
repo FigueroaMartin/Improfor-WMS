@@ -196,9 +196,11 @@ export async function moverSalida(pedidoId: string, columnaBodegaDestino: string
         peso: null,
         otNumero: null,
         firmaCapturada: null,
-        direccionEntrega: null,
-        comuna: null,
-        telefonoContacto: null,
+        // Si la dirección vino de Laudus, se mantiene — solo se limpia la
+        // que el usuario pudo haber escrito/corregido a mano.
+        ...(pedido.salesOrderIdLaudus == null
+          ? { direccionEntrega: null, comuna: null, telefonoContacto: null }
+          : {}),
         numeroGuiaStarken: null,
         // Vuelve a preparación de verdad — reinicia el timer de Bodega.
         llegadaPorPrepararEn: new Date(),

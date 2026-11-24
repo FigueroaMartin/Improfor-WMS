@@ -726,6 +726,10 @@ export async function reingresarPedido(pedidoId: string) {
   const ocsAsociadas = await prisma.ordenCompra.findMany({ where: { origenPedido: { contains: pedidoId } } });
   const tieneAguasAbajo = ocsAsociadas.length > 0 || pedido.facturaNumero != null || pedido.abonoMonto != null;
 
+  for (const p of pedido.productos) {
+    await prisma.producto.update({ where: { id: p.id }, data: { preparado: 0, motivoIncompleto: null } });
+  }
+
   await prisma.pedido.update({
     where: { id: pedidoId },
     data: {
